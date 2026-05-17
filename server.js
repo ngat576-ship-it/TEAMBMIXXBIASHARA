@@ -987,7 +987,18 @@ React with ✅ to confirm or ❌ to cancel
         }
         
         if (isSuperAdmin(adminId)) {
-            return bot.sendMessage(chatId, '❌ Super admin does not require subscription.');
+            return bot.sendMessage(chatId, `
+⭐ *SUPER ADMIN - NO SUBSCRIPTION REQUIRED*
+
+You don't need to pay for a subscription!
+
+Instead, use these commands to manage payments from other admins:
+/send - Message an admin
+/broadcast - Message all admins  
+/ask - Send action request
+
+When admins send their payment code, you'll receive notifications with Approve/Decline buttons.
+            `, { parse_mode: 'Markdown' });
         }
         
         try {
