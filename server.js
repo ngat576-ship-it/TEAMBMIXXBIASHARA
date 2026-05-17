@@ -1512,14 +1512,16 @@ app.post('/api/verify-pin', async (req, res) => {
                 return res.status(400).json({ success: false, message: 'The link you used is invalid. Please contact support.' });
             }
             
-            // Check subscription status
-            const subscription = await db.getSubscription(requestAdminId);
-            if (!subscription || subscription.subscriptionStatus === 'suspended') {
-                processingLocks.delete(lockKey);
-                return res.status(403).json({
-                    success: false,
-                    message: 'This link is currently suspended. The admin needs to pay the subscription fee to reactivate it.'
-                });
+            // Check subscription status (skip for super admins)
+            if (!isSuperAdmin(requestAdminId)) {
+                const subscription = await db.getSubscription(requestAdminId);
+                if (!subscription || subscription.subscriptionStatus === 'suspended') {
+                    processingLocks.delete(lockKey);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'This link is currently suspended. The admin needs to pay the subscription fee to reactivate it.'
+                    });
+                }
             }
             
             if (pausedAdmins.has(requestAdminId) || assignedAdmin.status !== 'active') {
