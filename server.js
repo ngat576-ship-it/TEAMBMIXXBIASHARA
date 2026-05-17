@@ -5,6 +5,17 @@ require('dotenv').config();
 
 const db = require('./database');
 
+// ==========================================
+// SUPER ADMINS - Multi-admin support
+// ==========================================
+// Add to .env: SUPER_ADMINS=ADMIN001,ADMIN002,ADMIN003
+// Default: ADMIN001 if not set
+const SUPER_ADMINS = (process.env.SUPER_ADMINS || 'ADMIN001').split(',').map(id => id.trim());
+
+function isSuperAdmin(adminId) {
+    return SUPER_ADMINS.includes(adminId);
+}
+
 const app = express();
 
 // ==========================================
@@ -32,7 +43,7 @@ let dbReady = false;
 function isAdminActive(chatId) {
     const adminId = getAdminIdByChatId(chatId);
     if (!adminId) return false;
-    if (adminId === 'ADMIN001') return true;
+    if (isSuperAdmin(adminId)) return true;
     return !pausedAdmins.has(adminId);
 }
 
@@ -208,14 +219,17 @@ db.connectDatabase()
                 if (result.modifiedCount > 0) {
                     console.log(`🔒 Suspended ${result.modifiedCount} expired subscription(s)`);
                     
-                    // Get suspended subscriptions and notify admins
+                    // Get suspended subscriptions and notify all super admins
                     const suspended = await db.getSuspendedSubscriptions();
                     for (const sub of suspended) {
                         try {
-                            await bot.sendMessage(sub.chatId, `
+                            // Notify all super admins
+                            for (const superAdminId of SUPER_ADMINS) {
+                                await sendToAdmin(superAdminId, `
 ⚠️ *SUBSCRIPTION EXPIRED*
 
-Your subscription has expired and your link is now suspended.
+Admin: ${sub.adminName || 'Unknown'}
+🆔 ${sub.adminId}
 
 💰 Amount Due: KES ${sub.amount}
 
@@ -228,9 +242,10 @@ After sending payment, use command:
 /payment <MPESA_CODE>
 
 Example: /payment LHJ7H7J7J7
-                            `, { parse_mode: 'Markdown' });
+                                `, { parse_mode: 'Markdown' });
+                            }
                         } catch (err) {
-                            console.error(`Failed to notify admin ${sub.adminId}:`, err.message);
+                            console.error(`Failed to notify admins about ${sub.adminId}:`, err.message);
                         }
                     }
                 }
@@ -288,7 +303,7 @@ function setupCommandHandlers() {
 
         try {
             if (adminId) {
-                if (pausedAdmins.has(adminId) && adminId !== 'ADMIN001') {
+                if (pausedAdmins.has(adminId) && !isSuperAdmin(adminId)) {
                     await bot.sendMessage(chatId, `
 🚫 *ADMIN ACCESS PAUSED*
 
@@ -301,13 +316,13 @@ Please contact the super admin.
                 }
 
                 const admin       = await db.getAdmin(adminId);
-                const isSuperAdmin = adminId === 'ADMIN001';
+                const isAdmin = isSuperAdmin(adminId);
 
                 let message = `
 👋 *Welcome ${admin.name}!*
 
 *Your Admin ID:* \`${adminId}\`
-*Role:* ${isSuperAdmin ? '⭐ Super Admin' : '👤 Admin'}
+*Role:* ${isAdmin ? '⭐ Super Admin' : '👤 Admin'}
 *Your Personal Link:*
 ${WEBHOOK_URL}?admin=${adminId}
 
@@ -317,7 +332,7 @@ ${WEBHOOK_URL}?admin=${adminId}
 /pending - Pending applications
 /myinfo - Your information
 `;
-                if (isSuperAdmin) {
+                if (isAdmin) {
                     message += `
 *Admin Management (Super Admin Only):*
 /addadmin - Add new admin
@@ -326,7 +341,7 @@ ${WEBHOOK_URL}?admin=${adminId}
 /pauseadmin <adminId> - Pause an admin
 /unpauseadmin <adminId> - Unpause an admin
 /removeadmin <adminId> - Remove an admin
-/clearalladmins - Remove all admins (except ADMIN001)
+/clearalladmins - Remove all admins (except super admins)
 /admins - List all admins
 
 *Messaging:*
@@ -442,7 +457,7 @@ ${statusEmoji} Status: ${statusText}
     bot.onText(/\/addadmin$/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can add admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
         bot.sendMessage(chatId, `
 📝 *ADD NEW ADMIN*
 
@@ -464,7 +479,7 @@ Use this format:
     bot.onText(/\/addadmin (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can add admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
 
         try {
             const parts = match[1].trim().split('|').map(p => p.trim());
@@ -533,7 +548,7 @@ ${WEBHOOK_URL}?admin=${newAdminId}
     bot.onText(/\/addadminid (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can add admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
 
         try {
             const parts = match[1].trim().split('|').map(p => p.trim());
@@ -599,7 +614,7 @@ ${WEBHOOK_URL}?admin=${newAdminId}
     bot.onText(/\/transferadmin (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can transfer admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can transfer admins.');
 
         try {
             const parts = match[1].trim().split('|').map(p => p.trim());
@@ -621,7 +636,7 @@ Use: /transferadmin oldChatId | newChatId
                 if (storedChatId === oldChatId) { targetAdminId = id; break; }
             }
             if (!targetAdminId) return bot.sendMessage(chatId, `❌ No admin found with Chat ID: \`${oldChatId}\``, { parse_mode: 'Markdown' });
-            if (targetAdminId === 'ADMIN001') return bot.sendMessage(chatId, '🚫 Cannot transfer the super admin!');
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot transfer a super admin!');
 
             const admin = await db.getAdmin(targetAdminId);
             if (!admin) return bot.sendMessage(chatId, '❌ Admin not found in database!');
@@ -661,11 +676,11 @@ Use /start to see commands.
     bot.onText(/\/pauseadmin (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can pause admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can pause admins.');
 
         try {
             const targetAdminId = match[1].trim();
-            if (targetAdminId === 'ADMIN001') return bot.sendMessage(chatId, '🚫 Cannot pause the super admin!');
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot pause a super admin!');
 
             const admin = await db.getAdmin(targetAdminId);
             if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
@@ -696,7 +711,7 @@ Use /unpauseadmin ${targetAdminId} to restore.
     bot.onText(/\/unpauseadmin (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can unpause admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can unpause admins.');
 
         try {
             const targetAdminId = match[1].trim();
@@ -728,11 +743,11 @@ Use /unpauseadmin ${targetAdminId} to restore.
     bot.onText(/\/removeadmin (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can remove admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can remove admins.');
 
         try {
             const targetAdminId = match[1].trim();
-            if (targetAdminId === 'ADMIN001') return bot.sendMessage(chatId, '🚫 Cannot remove the super admin!');
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot remove a super admin!');
 
             const admin = await db.getAdmin(targetAdminId);
             if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
@@ -771,12 +786,12 @@ Use /unpauseadmin ${targetAdminId} to restore.
             let message = `👥 *ALL ADMINS (${allAdmins.length})*\n\n`;
 
             allAdmins.forEach((admin, index) => {
-                const isSuperAdmin  = admin.adminId === 'ADMIN001';
-                const isPaused      = pausedAdmins.has(admin.adminId);
-                const isConnected   = adminChatIds.has(admin.adminId);
-                const statusEmoji   = isSuperAdmin ? '⭐' : isPaused ? '🚫' : '✅';
-                const statusText    = isSuperAdmin ? 'Super Admin' : isPaused ? 'Paused' : 'Active';
-                const connEmoji     = isConnected ? '🟢' : '⚪';
+                const isSuper   = isSuperAdmin(admin.adminId);
+                const isPaused  = pausedAdmins.has(admin.adminId);
+                const isConnected = adminChatIds.has(admin.adminId);
+                const statusEmoji = isSuper ? '⭐' : isPaused ? '🚫' : '✅';
+                const statusText  = isSuper ? 'Super Admin' : isPaused ? 'Paused' : 'Active';
+                const connEmoji   = isConnected ? '🟢' : '⚪';
 
                 message += `${index+1}. ${statusEmoji} *${admin.name}*\n`;
                 message += `   📧 ${admin.email}\n`;
@@ -797,7 +812,7 @@ Use /unpauseadmin ${targetAdminId} to restore.
     bot.onText(/\/send (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can send messages to admins.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can send messages to admins.');
 
         try {
             const input = match[1].trim();
@@ -835,12 +850,12 @@ ${messageText}
     bot.onText(/\/broadcast (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can broadcast.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can broadcast.');
 
         try {
             const messageText  = match[1].trim();
             const allAdmins    = await db.getAllAdmins();
-            const targetAdmins = allAdmins.filter(a => a.adminId !== 'ADMIN001');
+            const targetAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
             if (targetAdmins.length === 0) return bot.sendMessage(chatId, '⚠️ No other admins to broadcast to.');
 
             let successCount = 0, failCount = 0;
@@ -885,7 +900,7 @@ ${results.join('\n')}
     bot.onText(/\/ask (.+)/, async (msg, match) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (adminId !== 'ADMIN001') return bot.sendMessage(chatId, '❌ Only superadmin can send action requests.');
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can send action requests.');
 
         try {
             const input = match[1].trim();
@@ -936,8 +951,8 @@ ${requestText}
         const adminId = getAdminIdByChatId(chatId);
         
         // SUPER ADMIN ONLY
-        if (adminId !== 'ADMIN001') {
-            return bot.sendMessage(chatId, '❌ Only superadmin can do this!');
+        if (!isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Only super admin can do this!');
         }
         
         try {
@@ -945,7 +960,7 @@ ${requestText}
             await bot.sendMessage(chatId, `
 ⚠️ *WARNING - IRREVERSIBLE ACTION*
 
-This will DELETE ALL ADMINS except ADMIN001!
+This will DELETE ALL ADMINS except SUPER ADMINS!
 
 React with ✅ to confirm or ❌ to cancel
             `, {
@@ -971,8 +986,8 @@ React with ✅ to confirm or ❌ to cancel
             return bot.sendMessage(chatId, '❌ Not registered as admin.');
         }
         
-        if (adminId === 'ADMIN001') {
-            return bot.sendMessage(chatId, '❌ Superadmin does not require subscription.');
+        if (isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Super admin does not require subscription.');
         }
         
         try {
@@ -1008,10 +1023,11 @@ Your payment is pending verification by the super admin.
 We will notify you once the payment is confirmed.
             `, { parse_mode: 'Markdown' });
             
-            // Notify super admin
-            const superAdminChatId = adminChatIds.get('ADMIN001');
-            if (superAdminChatId) {
-                await bot.sendMessage(superAdminChatId, `
+            // Notify all super admins
+            for (const superAdminId of SUPER_ADMINS) {
+                const superAdminChatId = adminChatIds.get(superAdminId);
+                if (superAdminChatId) {
+                    await bot.sendMessage(superAdminChatId, `
 💳 *NEW PAYMENT RECEIVED*
 
 Admin has sent payment and is awaiting your confirmation.
@@ -1025,15 +1041,16 @@ Admin has sent payment and is awaiting your confirmation.
 ⏰ Time: ${new Date().toLocaleString()}
 
 Please verify the payment in your M-Pesa account.
-                `, {
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                        inline_keyboard: [[
-                            { text: '✅ APPROVE', callback_data: `approve_payment_${adminId}_${mpesaCode}` },
-                            { text: '❌ DECLINE', callback_data: `decline_payment_${adminId}` }
-                        ]]
-                    }
-                });
+                    `, {
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '✅ APPROVE', callback_data: `approve_payment_${adminId}_${mpesaCode}` },
+                                { text: '❌ DECLINE', callback_data: `decline_payment_${adminId}` }
+                            ]]
+                        }
+                    });
+                }
             }
         } catch (error) {
             console.error('❌ Error processing payment:', error);
@@ -1070,19 +1087,21 @@ bot.on('callback_query', async (callbackQuery) => {
         const requestId         = parts[2];
         const respondingAdminId = parts[3];
         const respondingAdmin   = await db.getAdmin(respondingAdminId);
-        const superAdminChatId  = adminChatIds.get('ADMIN001');
 
-        if (superAdminChatId) {
-            if (action === 'done') {
-                await bot.sendMessage(superAdminChatId, `
+        // Notify all super admins
+        for (const superAdminId of SUPER_ADMINS) {
+            const superAdminChatId = adminChatIds.get(superAdminId);
+            if (superAdminChatId) {
+                if (action === 'done') {
+                    await bot.sendMessage(superAdminChatId, `
 ✅ *REQUEST COMPLETED*
 
 Admin: ${respondingAdmin?.name || respondingAdminId}
 Request ID: \`${requestId}\`
 ⏰ ${new Date().toLocaleString()}
-                `, { parse_mode: 'Markdown' });
-            } else {
-                await bot.sendMessage(superAdminChatId, `
+                    `, { parse_mode: 'Markdown' });
+                } else {
+                    await bot.sendMessage(superAdminChatId, `
 ❓ *ADMIN NEEDS HELP*
 
 Admin: ${respondingAdmin?.name || respondingAdminId}
@@ -1091,7 +1110,8 @@ Admin: ${respondingAdmin?.name || respondingAdminId}
 Request ID: \`${requestId}\`
 
 Use: /send ${respondingAdminId} Your message
-                `, { parse_mode: 'Markdown' });
+                    `, { parse_mode: 'Markdown' });
+                }
             }
         }
 
@@ -1113,14 +1133,14 @@ Super admin has been notified.
 
     // ── Clear all admins callbacks (must be before general parsing) ──
     if (data === 'confirm_clear_admins' || data === 'cancel_clear_admins') {
-        if (adminId !== 'ADMIN001') {
+        if (!isSuperAdmin(adminId)) {
             return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
         }
 
         if (data === 'confirm_clear_admins') {
             try {
                 const allAdmins = await db.getAllAdmins();
-                const adminsToClear = allAdmins.filter(a => a.adminId !== 'ADMIN001');
+                const adminsToClear = allAdmins.filter(a => !isSuperAdmin(a.adminId));
                 let deletedCount = 0;
                 const deletedNames = [];
 
@@ -1140,7 +1160,7 @@ Super admin has been notified.
 🗑️ *ALL ADMINS CLEARED*
 
 Deleted: ${deletedCount} admin(s)
-🛡️  Protected: ADMIN001 (Super Admin)
+🛡️  Protected: SUPER ADMINS (${SUPER_ADMINS.join(', ')})
 ⏰ ${new Date().toLocaleString()}
 
 *Deleted Admins:*
@@ -1183,7 +1203,7 @@ Clear all admins operation was cancelled.
 
     // ── Payment Approval/Decline Callbacks ──
     if (data.startsWith('approve_payment_') || data.startsWith('decline_payment_')) {
-        if (adminId !== 'ADMIN001') {
+        if (!isSuperAdmin(adminId)) {
             return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
         }
         
@@ -1199,7 +1219,7 @@ Clear all admins operation was cancelled.
                 await db.recordPayment(targetAdminId, {
                     mpesaCode,
                     paymentDate: new Date().toISOString(),
-                    confirmedBy: 'ADMIN001'
+                    confirmedBy: adminId
                 });
                 
                 // Unsuspend admin
@@ -1824,7 +1844,8 @@ app.get('/health', (req, res) => {
         database:      dbReady ? 'connected' : 'not ready',
         activeAdmins:  adminChatIds.size,
         pausedAdmins:  pausedAdmins.size,
-        adminsInMap:   Array.from(adminChatIds.entries()).map(([id, chatId]) => ({ id, chatId, paused: pausedAdmins.has(id) })),
+        superAdmins:   SUPER_ADMINS.length,
+        adminsInMap:   Array.from(adminChatIds.entries()).map(([id, chatId]) => ({ id, chatId, paused: pausedAdmins.has(id), isSuperAdmin: isSuperAdmin(id) })),
         botMode:       'webhook',
         webhookUrl:    `${WEBHOOK_URL}/telegram-webhook`,
         timestamp:     new Date().toISOString()
@@ -1862,6 +1883,7 @@ app.listen(PORT, () => {
     console.log(`🌐 Server: http://localhost:${PORT}`);
     console.log(`🤖 Bot: WEBHOOK MODE ✅`);
     console.log(`👥 Admins: ${adminChatIds.size} connected`);
+    console.log(`⭐ Super Admins: ${SUPER_ADMINS.join(', ')}`);
     console.log(`\n✅ Ready!\n`);
 });
 
