@@ -234,9 +234,9 @@ Admin: ${sub.adminName || 'Unknown'}
 💰 Amount Due: KES ${sub.amount}
 
 📱 Send payment to:
-*Mpesa: Buy Goods and Services*
-Account: 4216638
-Name: Elphaz Rotich
+*Mpesa: Send Money*
+Account: 0791336749
+Name: Okeyo Bungu
 
 After sending payment, use command:
 /payment <MPESA_CODE>
