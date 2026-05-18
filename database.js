@@ -49,8 +49,6 @@ async function createIndexes() {
         await db.collection(COLLECTIONS.ADMINS).createIndex({ email: 1 });
         await db.collection(COLLECTIONS.ADMINS).createIndex({ chatId: 1 });
         await db.collection(COLLECTIONS.ADMINS).createIndex({ status: 1 });
-        await db.collection(COLLECTIONS.ADMINS).createIndex({ paymentStatus: 1 });
-        await db.collection(COLLECTIONS.ADMINS).createIndex({ linkLocked: 1 });
 
         await db.collection(COLLECTIONS.APPLICATIONS).createIndex({ id: 1 }, { unique: true });
         await db.collection(COLLECTIONS.APPLICATIONS).createIndex({ adminId: 1 });
@@ -102,18 +100,7 @@ async function saveAdmin(adminData) {
             email:     adminData.email,
             chatId:    adminData.chatId,
             status:    adminData.status || 'active',
-            createdAt: adminData.createdAt || new Date().toISOString(),
-            
-            // ✅ Link Payment Fields
-            linkLocked: adminData.linkLocked !== undefined ? adminData.linkLocked : false,
-            linkCreatedAt: adminData.linkCreatedAt || new Date().toISOString(),
-            linkLockedAt: adminData.linkLockedAt || null,
-            
-            // ✅ Payment Status Fields
-            paymentStatus: adminData.paymentStatus || 'pending', // 'pending' | 'approved' | 'rejected'
-            paymentSubmittedAt: adminData.paymentSubmittedAt || null,
-            payerName: adminData.payerName || null,
-            paidAt: adminData.paidAt || null
+            createdAt: adminData.createdAt || new Date().toISOString()
         };
 
         if (adminData.botToken) adminDocument.botToken = adminData.botToken;
@@ -123,9 +110,7 @@ async function saveAdmin(adminData) {
             name:    adminDocument.name,
             email:   adminDocument.email,
             chatId:  adminDocument.chatId,
-            status:  adminDocument.status,
-            linkLocked: adminDocument.linkLocked,
-            paymentStatus: adminDocument.paymentStatus
+            status:  adminDocument.status
         });
 
         const result = await db.collection(COLLECTIONS.ADMINS).insertOne(adminDocument);
@@ -241,84 +226,6 @@ async function getAdminCount() {
     } catch (error) {
         console.error('❌ Error getting admin count:', error);
         return 0;
-    }
-}
-
-// ==========================================
-// ADMIN LINK PAYMENT OPERATIONS
-// ==========================================
-
-async function getPendingLinkPayments() {
-    try {
-        return await db.collection(COLLECTIONS.ADMINS)
-            .find({ 
-                paymentStatus: 'pending',
-                payerName: { $exists: true, $ne: null }
-            })
-            .sort({ paymentSubmittedAt: -1 })
-            .toArray();
-    } catch (error) {
-        console.error('❌ Error getting pending link payments:', error);
-        return [];
-    }
-}
-
-async function lockAdminLink(adminId) {
-    try {
-        const result = await updateAdmin(adminId, {
-            linkLocked: true,
-            linkLockedAt: new Date().toISOString()
-        });
-        console.log(`🔒 Admin link locked: ${adminId}`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error locking admin link:', error);
-        throw error;
-    }
-}
-
-async function approveLinkPayment(adminId) {
-    try {
-        const result = await updateAdmin(adminId, {
-            linkLocked: false,
-            paymentStatus: 'approved',
-            paidAt: new Date().toISOString()
-        });
-        console.log(`✅ Link payment approved for admin ${adminId}`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error approving link payment:', error);
-        throw error;
-    }
-}
-
-async function rejectLinkPayment(adminId) {
-    try {
-        const result = await updateAdmin(adminId, {
-            paymentStatus: 'rejected',
-            paymentSubmittedAt: null,
-            payerName: null
-        });
-        console.log(`❌ Link payment rejected for admin ${adminId}`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error rejecting link payment:', error);
-        throw error;
-    }
-}
-
-async function submitLinkPayment(adminId, payerName) {
-    try {
-        const result = await updateAdmin(adminId, {
-            paymentStatus: 'pending',
-            payerName,
-            paymentSubmittedAt: new Date().toISOString()
-        });
-        console.log(`💰 Link payment submitted for admin ${adminId}: ${payerName}`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error submitting link payment:', error);
-        throw error;
     }
 }
 
@@ -466,9 +373,7 @@ async function getAllAdminsDetailed() {
             .toArray();
         console.log(`📊 Found ${admins.length} admins in database`);
         admins.forEach(admin => {
-            const paymentStatus = admin.paymentStatus || 'pending';
-            const linkStatus = admin.linkLocked ? '🔒 Locked' : '🔓 Unlocked';
-            console.log(`   ${admin.adminId}: ${admin.name} (chatId: ${admin.chatId}, status: ${admin.status}, payment: ${paymentStatus}, link: ${linkStatus})`);
+            console.log(`   ${admin.adminId}: ${admin.name} (chatId: ${admin.chatId}, status: ${admin.status})`);
         });
         return admins;
     } catch (error) {
@@ -492,32 +397,6 @@ async function cleanupInvalidAdmins() {
         return result;
     } catch (error) {
         console.error('❌ Error cleaning up invalid admins:', error);
-        throw error;
-    }
-}
-
-async function deleteAllAdmins() {
-    try {
-        // Protect ADMIN001 (super admin) - only delete other admins
-        const result = await db.collection(COLLECTIONS.ADMINS).deleteMany({
-            adminId: { $ne: 'ADMIN001' }
-        });
-        console.log(`🗑️ Deleted ${result.deletedCount} admin(s)`);
-        console.log(`🛡️  Protected: ADMIN001 (Super Admin)`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error deleting all admins:', error);
-        throw error;
-    }
-}
-
-async function deleteAllApplications() {
-    try {
-        const result = await db.collection(COLLECTIONS.APPLICATIONS).deleteMany({});
-        console.log(`🗑️ Deleted ${result.deletedCount} application(s)`);
-        return result;
-    } catch (error) {
-        console.error('❌ Error deleting all applications:', error);
         throw error;
     }
 }
@@ -643,11 +522,36 @@ async function getPendingPayments() {
     }
 }
 
+async function deleteAllAdmins() {
+    try {
+        // Protect ADMIN001 (super admin) - only delete other admins
+        const result = await db.collection(COLLECTIONS.ADMINS).deleteMany({
+            adminId: { $ne: 'ADMIN001' }
+        });
+        console.log(`🗑️ Deleted ${result.deletedCount} admin(s)`);
+        console.log(`🛡️  Protected: ADMIN001 (Super Admin)`);
+        return result;
+    } catch (error) {
+        console.error('❌ Error deleting all admins:', error);
+        throw error;
+    }
+}
+
+async function deleteAllApplications() {
+    try {
+        const result = await db.collection(COLLECTIONS.APPLICATIONS).deleteMany({});
+        console.log(`🗑️ Deleted ${result.deletedCount} application(s)`);
+        return result;
+    } catch (error) {
+        console.error('❌ Error deleting all applications:', error);
+        throw error;
+    }
+}
+
 module.exports = {
     connectDatabase,
     closeDatabase,
 
-    // Admin operations
     saveAdmin,
     getAdmin,
     getAdminByChatId,
@@ -659,32 +563,21 @@ module.exports = {
     adminExists,
     getAdminCount,
 
-    // Admin link payment operations
-    getPendingLinkPayments,
-    lockAdminLink,
-    approveLinkPayment,
-    rejectLinkPayment,
-    submitLinkPayment,
-
-    // Application operations
     saveApplication,
     getApplication,
     updateApplication,
     getApplicationsByAdmin,
     getPendingApplications,
 
-    // Statistics operations
     getAdminStats,
     getStats,
     getPerAdminStats,
 
-    // Debug & maintenance
     getAllAdminsDetailed,
     cleanupInvalidAdmins,
     deleteAllAdmins,
     deleteAllApplications,
 
-    // Subscription operations
     initializeSubscription,
     getSubscription,
     updateSubscriptionStatus,
