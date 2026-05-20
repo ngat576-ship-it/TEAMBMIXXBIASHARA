@@ -282,6 +282,72 @@ db.connectDatabase()
             }
         }, 60000);
 
+        // ── Check and suspend expired subscriptions (daily check at midnight) ──
+        setInterval(async () => {
+            try {
+                const now = new Date();
+                // Check if it's the 1st of the month
+                if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() < 2) {
+                    console.log('📅 Monthly billing cycle: Suspending all non-super-admin links...');
+                    
+                    const allAdmins = await db.getAllAdmins();
+                    const regularAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+                    
+                    for (const admin of regularAdmins) {
+                        try {
+                            // Lock all admin links
+                            await db.updateAdmin(admin.adminId, { 
+                                linkLocked: true, 
+                                linkLockedAt: new Date(),
+                                paymentStatus: 'pending'
+                            });
+                            
+                            // Notify admin of monthly suspension
+                            if (admin.chatId) {
+                                await bot.sendMessage(admin.chatId, `
+📅 *MONTHLY SUBSCRIPTION RENEWAL REQUIRED*
+
+Your subscription has expired and your admin link has been suspended.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 *PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 **Payment Method:** Mobile Money
+
+**Recipient Name:** Okeyo Bungu
+**Phone Number:** 0791336749
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*Steps to Renew:*
+1️⃣ Send money to: *0791336749*
+2️⃣ Use your preferred payment method (M-Pesa, MTN, etc)
+3️⃣ Get the transaction reference code
+4️⃣ Send the code in this format:
+
+\`/payment YOUR_TRANSACTION_CODE\`
+
+*Example:*
+\`/payment XAF123456\`
+
+Once payment is verified and approved by super admin, your link will be unlocked.
+
+📧 Questions? Contact the super admin.
+                                `, { parse_mode: 'Markdown' }).catch(() => {});
+                            }
+                            
+                            console.log(`🔒 Monthly suspension: ${admin.adminId} (${admin.name})`);
+                        } catch (err) {
+                            console.error(`Failed to suspend ${admin.adminId}:`, err.message);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error checking monthly subscriptions:', error);
+            }
+        }, 60 * 1000); // Check every minute
+
         console.log('✅ System fully initialized!');
     })
     .catch((error) => {
