@@ -440,6 +440,7 @@ ${WEBHOOK_URL}?admin=${adminId}
 /pendingpayments - View pending admin payments
 /approvepayment <adminId> - Approve payment
 /rejectpayment <adminId> - Reject payment
+/unlockalllinks - Unlock ALL admin links immediately
 
 *Messaging:*
 /send <adminId> <message> - Message an admin
@@ -1250,6 +1251,70 @@ React with ✅ to confirm or ❌ to cancel
             });
         } catch (error) {
             bot.sendMessage(chatId, '❌ Error: ' + error.message);
+        }
+    });
+
+    // /unlockalllinks (SUPER ADMIN ONLY) - Unlock all admin links immediately
+    bot.onText(/\/unlockalllinks/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+
+        if (!isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Only super admin can unlock all links.');
+        }
+
+        try {
+            const allAdmins = await db.getAllAdmins();
+            const regularAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+
+            let unlockedCount = 0;
+            const unlockedNames = [];
+
+            for (const admin of regularAdmins) {
+                try {
+                    // Cancel any pending lock timer
+                    removeLinkPaymentTimer(admin.adminId);
+
+                    // Unlock link in DB
+                    await db.updateAdmin(admin.adminId, {
+                        linkLocked: false,
+                        paymentStatus: 'approved',
+                        paidAt: new Date()
+                    });
+
+                    unlockedCount++;
+                    unlockedNames.push(`${admin.name} (${admin.adminId})`);
+
+                    // Notify each admin their link is now active
+                    if (admin.chatId) {
+                        bot.sendMessage(admin.chatId, `
+✅ *YOUR LINK HAS BEEN UNLOCKED*
+
+Your admin link is now active.
+
+🔗 Your Link: ${WEBHOOK_URL}?admin=${admin.adminId}
+
+Use /start to see all commands.
+                        `, { parse_mode: 'Markdown' }).catch(() => {});
+                    }
+                } catch (err) {
+                    console.error(`Failed to unlock ${admin.adminId}:`, err.message);
+                }
+            }
+
+            await bot.sendMessage(chatId, `
+🔓 *ALL LINKS UNLOCKED*
+
+✅ Unlocked: ${unlockedCount} admin(s)
+⏰ ${new Date().toLocaleString()}
+
+*Admins unlocked:*
+${unlockedNames.map((n, i) => `${i + 1}. ${n}`).join('\n') || 'None'}
+            `, { parse_mode: 'Markdown' });
+
+        } catch (error) {
+            console.error('❌ Error unlocking all links:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
         }
     });
 
